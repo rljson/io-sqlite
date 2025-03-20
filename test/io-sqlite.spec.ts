@@ -6,12 +6,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { Template } from '../src/template';
+import { IoSqlite } from '../src/io-sqlite';
 
-
-describe('Template', () => {
-  it('should validate a template', () => {
-    const template = Template.example;
-    expect(template).toBeDefined();
+describe('IoSqlite', () => {
+  it('should validate a io-sqlite', () => {
+    const ioSqlite = IoSqlite.example;
+    expect(ioSqlite).toBeDefined();
   });
 });

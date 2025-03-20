@@ -1,3 +1,3 @@
-Template.example
-  Returns an instance of the template.
+IoSqlite.example
+  Returns an instance of the io-sqlite.
     {}

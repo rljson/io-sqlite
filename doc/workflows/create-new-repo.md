@@ -22,9 +22,9 @@ Select `Repositories`
 
 Click `New repository`
 
-Below `Repository template` click on the drop down `No template`
+Below `Repository IoSqlite` click on the drop down `No IoSqlite`
 
-Select the desired template repository
+Select the desired IoSqlite repository
 
 Create the repo as used
 
@@ -113,10 +113,10 @@ Prepare a new branch and pull request
 git checkout -b extend-readmes-on-npm-publishing-and-repo-creation
 ```
 
-## Rename template into my-new-repo
+## Rename IoSqlite into my-new-repo
 
 ```bash
-node scripts/rename-class.js template
+node scripts/rename-class.js IoSqlite
 ```
 
 ## Update goldens
@@ -129,7 +129,7 @@ pnpm updateGoldens
 
 ```bash
 git add .
-git commit -am "Rename template into MyNewRepo"
+git commit -am "Rename IoSqlite into MyNewRepo"
 ```
 
 ## Merge and publish
