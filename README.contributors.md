@@ -22,11 +22,11 @@ found in the LICENSE file in the root of this package.
   - [Create an account on NPM](#create-an-account-on-npm)
   - [Request access to Rljson](#request-access-to-rljson)
   - [Generate and install an access token](#generate-and-install-an-access-token)
-- [Open template the first time](#open-template-the-first-time)
+- [Open IoSqlite the first time](#open-iosqlite-the-first-time)
   - [Create a dev and rljson folder](#create-a-dev-and-rljson-folder)
   - [Clone code](#clone-code)
   - [Configure email address and user name](#configure-email-address-and-user-name)
-  - [Open template with Vscode](#open-template-with-vscode)
+  - [Open IoSqlite with Vscode](#open-iosqlite-with-vscode)
   - [Install recommended extensions](#install-recommended-extensions)
   - [Activate PNPM for the project](#activate-pnpm-for-the-project)
 - [Develop your feature](#develop-your-feature)
@@ -239,7 +239,7 @@ Replace `your-auth-token` by your token.
 
 Now you should be able to publish package updates
 
-## Open template the first time
+## Open IoSqlite the first time
 
 ### Create a dev and rljson folder
 
@@ -259,7 +259,7 @@ cd rljson
 
 ```bash
 cd ~/dev/rljson
-git clone https://github.com/rljson/template.git
+git clone https://github.com/rljson/io-sqlite.git
 ```
 
 ### Configure email address and user name
@@ -276,10 +276,10 @@ Replace `email` by your email and execute:
 git config --global user.email "email"
 ```
 
-### Open template with Vscode
+### Open IoSqlite with Vscode
 
 ```bash
-code template
+code IoSqlite
 ```
 
 ### Install recommended extensions
@@ -442,7 +442,7 @@ Checkout [./README.trouble.md](./README.trouble.md)
 
 ### File issues on GitHub
 
-Visit <https://github.com/rljson/template/issues>
+Visit <https://github.com/rljson/io-sqlite/issues>
 
 Check if there is already an issue for your problem.
 

@@ -1,9 +1,9 @@
 {
-  "name": "@rljson/template",
+  "name": "@rljson/io-sqlite",
   "version": "0.0.8",
-  "description": "template rljson files",
-  "homepage": "https://github.com/rljson/template",
-  "bugs": "https://github.com/rljson/template/issues",
+  "description": "IoSqlite rljson files",
+  "homepage": "https://github.com/rljson/io-sqlite",
+  "bugs": "https://github.com/rljson/io-sqlite/issues",
   "private": false,
   "license": "MIT",
   "engines": {
@@ -11,9 +11,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rljson/template.git"
+    "url": "git+https://github.com/rljson/io-sqlite.git"
   },
-  "main": "dist/template.js",
+  "main": "dist/io-sqlite.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
