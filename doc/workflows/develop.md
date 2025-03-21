@@ -34,13 +34,13 @@ git pull
 
 In the _whole document_, replace the following things:
 
-- `update-documentation-and-scripts` by the name of your new branch
-- `Update documentation and scripts` by your new pull request title
+- `fix-build-error` by the name of your new branch
+- `Fix build error` by your new pull request title
 
 ## Create a feature branch
 
 ```bash
-git checkout -b update-documentation-and-scripts
+git checkout -b fix-build-error
 ```
 
 ## Update dependencies
@@ -89,8 +89,8 @@ git rebase main
 ## Create a pull request
 
 ```bash
-git push -u origin update-documentation-and-scripts
-gh pr create --base main --title "Update documentation and scripts" --body " "
+git push -u origin fix-build-error
+gh pr create --base main --title "Fix build error" --body " "
 gh pr merge --auto --squash
 ```
 
@@ -107,7 +107,7 @@ git checkout main
 git reset --soft origin/main
 git stash -m"PR Aftermath"
 git pull
-git branch -d update-documentation-and-scripts
+git branch -d fix-build-error
 ```
 
 ## Publish to NPM
