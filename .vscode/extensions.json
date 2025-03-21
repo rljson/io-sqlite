@@ -21,6 +21,7 @@
     "vitest.explorer",
     "github.vscode-github-actions",
     "yzhang.markdown-all-in-one",
-    "mdickin.markdown-shortcuts"
+    "mdickin.markdown-shortcuts",
+    "github.vscode-pull-request-github"
   ]
 }
