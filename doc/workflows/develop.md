@@ -13,7 +13,6 @@ found in the LICENSE file in the root of this package.
 - [Create a feature branch](#create-a-feature-branch)
 - [Update dependencies](#update-dependencies)
 - [Develop and debug with Vscode](#develop-and-debug-with-vscode)
-- [Update goldens](#update-goldens)
 - [Commit](#commit)
 - [Increase version](#increase-version)
 - [Run tests and build](#run-tests-and-build)
