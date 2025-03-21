@@ -46,7 +46,7 @@ function getPRStatus() {
 async function checkIfPipelineHasFailed() {
   try {
     const json = execSync(
-      'gh run list --repo rljson/IoSqlite --limit 1 --json status,conclusion',
+      'gh run list --repo rljson/io-sqlite --limit 1 --json status,conclusion',
       {
         encoding: 'utf-8',
       },

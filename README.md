@@ -6,7 +6,7 @@ Use of this source code is governed by terms that can be
 found in the LICENSE file in the root of this package.
 -->
 
-# @rljson/IoSqlite
+# @rljson/io-sqlite
 
 ## Users
 
@@ -22,4 +22,3 @@ found in the LICENSE file in the root of this package.
 | [README.architecture.md](README.architecture.md) | Software architecture guide   |
 | [README.trouble.md](README.trouble.md)           | Errors & solutions            |
 | [README.blog.md](README.blog.md)                 | Blog                          |
-| [README.pianist.md](README.piano.md)             | High performance coding guid  |

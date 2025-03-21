@@ -8,11 +8,25 @@ found in the LICENSE file in the root of this package.
 
 # Create a new Rljson repository
 
+## Content <!-- omit in toc -->
+
+- [Replace in this doc](#replace-in-this-doc)
+- [Create repo](#create-repo)
+- [Setup branch rules](#setup-branch-rules)
+- [Require deleting branches after merge](#require-deleting-branches-after-merge)
+- [Checkout and open the new project](#checkout-and-open-the-new-project)
+- [Rename template-project into my-new-repo](#rename-template-project-into-my-new-repo)
+  - [Call rename script](#call-rename-script)
+- [Update goldens](#update-goldens)
+- [Commit the initial state](#commit-the-initial-state)
+  - [Create and complete pull request](#create-and-complete-pull-request)
+  - [Delete feature branch](#delete-feature-branch)
+
 ## Replace in this doc
 
 Replace `my-new-repo` by the name of your new repo
 
-Replace `MyNewRepo` by the name of your new repo
+Replace `MyNewRepo` by the upper camelcase name of you main class
 
 ## Create repo
 
@@ -22,15 +36,17 @@ Select `Repositories`
 
 Click `New repository`
 
-Below `Repository IoSqlite` click on the drop down `No IoSqlite`
+Below `Repository template` click on the drop down `No template`
 
-Select the desired IoSqlite repository
+Select the template repository `@rljson/template-project`
+
+Enter a `my-new-repo` as `name`
+
+Enter a title for the repo
 
 Create the repo as used
 
 ## Setup branch rules
-
-<https://stackoverflow.com/a/57685576/1210942>
 
 Open <https://github.com/rljson/my-new-repo>
 
@@ -42,12 +58,9 @@ Locate `Branch Protection Rules`
 
 Click `Add branch ruleset`
 
-Enter the following values:
+As `Ruleset Name` enter `Default`
 
-| Key                | Value   |
-| ------------------ | ------- |
-| Ruleset Name       | Default |
-| Enforcement status | Active  |
+Set `Enforcement status` to `Active`
 
 Locate `Branch targeting criteria`
 
@@ -60,7 +73,15 @@ Check the following settings:
 - [x] `Restrict deletions`
 - [x] `Require linear history`
 - [x] `Require a pull request before merging`
-  - [x] `Allowed merge methods:`: `Squash`
+  - Click on the dropdown below `Required approvals`
+    - Select `1`
+    - Check the following boxes:
+      - [x] `Dismiss stale pull request approvals when new commits are pushed`
+      - [x] `Require review from code owners`
+      - [x] `Require approval of the most recent reviewable push`
+      - [x] `Require conversation resolution before merging`
+  - Click on `Allowed merge methods:`
+    - Only select `Squash`
 - [x] `Require status checks to pass`
   - [x] `Require branches to be up to date before merging`
   - Click `Add checks`
@@ -70,7 +91,7 @@ Check the following settings:
 
 Click `Create`
 
-Authenticate
+When asked, Authenticate
 
 ## Require deleting branches after merge
 
@@ -85,16 +106,15 @@ Apply the following settings:
 - [ ] `Allow merge commits`
 - [x] `Allow squash merging`
 - [ ] `Allow rebase merging`
-- [x] `Alway suggest updating pull request branches`
+- [x] `Always suggest updating pull request branches`
 - [x] `Allow auto-merge`
 - [x] `Automatically delete head branches`
 
-## Prepare project
+## Checkout and open the new project
 
 Checkout the project
 
 ```bash
-cd ~/dev/rljson
 git clone git@github.com:rljson/my-new-repo.git
 cd my-new-repo
 pnpm install
@@ -110,13 +130,15 @@ code .
 Prepare a new branch and pull request
 
 ```bash
-git checkout -b extend-readmes-on-npm-publishing-and-repo-creation
+git checkout -b rename-classes
 ```
 
-## Rename IoSqlite into my-new-repo
+## Rename template-project into my-new-repo
+
+### Call rename script
 
 ```bash
-node scripts/rename-class.js IoSqlite
+node scripts/rename-class.js template-project my-new-repo
 ```
 
 ## Update goldens
@@ -129,13 +151,25 @@ pnpm updateGoldens
 
 ```bash
 git add .
-git commit -am "Rename IoSqlite into MyNewRepo"
+git commit -am "Rename template-project into my-new-repo"
 ```
 
-## Merge and publish
+### Create and complete pull request
 
 ```bash
-code `README.contributors.md`
+git push -u origin my-new-repo
+gh pr create --base main --title "Rename template-project into my-new-repo" --body " "
+gh pr merge --auto --squash
+node ./scripts/wait-for-pr.js
 ```
 
-Go to section `### Update dependencies` and follow the instruction
+### Delete feature branch
+
+```bash
+git fetch
+git checkout main
+git reset --soft origin/main
+git stash -m"PR Aftermath"
+git pull
+git branch -d rename-classes
+```
