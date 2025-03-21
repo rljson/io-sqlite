@@ -34,13 +34,13 @@ git pull
 
 In the _whole document_, replace the following things:
 
-- `add-github-prs-extension` by the name of your new branch
-- `Add GitHub PR extension` by your new pull request title
+- `fix-build-error` by the name of your new branch
+- `Fix build error` by your new pull request title
 
 ## Create a feature branch
 
 ```bash
-git checkout -b add-github-prs-extension
+git checkout -b fix-build-error
 ```
 
 ## Update dependencies
@@ -89,8 +89,8 @@ git rebase main
 ## Create a pull request
 
 ```bash
-git push -u origin add-github-prs-extension
-gh pr create --base main --title "Add GitHub PR extension" --body " "
+git push -u origin fix-build-error
+gh pr create --base main --title "Fix build error" --body " "
 gh pr merge --auto --squash
 ```
 
@@ -107,7 +107,7 @@ git checkout main
 git reset --soft origin/main
 git stash -m"PR Aftermath"
 git pull
-git branch -d add-github-prs-extension
+git branch -d fix-build-error
 ```
 
 ## Publish to NPM
