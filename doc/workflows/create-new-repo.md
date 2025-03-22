@@ -76,8 +76,8 @@ Check the following settings:
   - Click on the dropdown below `Required approvals`
     - Select `1`
     - Check the following boxes:
-      - [x] `Dismiss stale pull request approvals when new commits are pushed`
-      - [x] `Require review from code owners`
+      - [ ] `Dismiss stale pull request approvals when new commits are pushed`
+      - [ ] `Require review from code owners`
       - [x] `Require approval of the most recent reviewable push`
       - [x] `Require conversation resolution before merging`
   - Click on `Allowed merge methods:`
