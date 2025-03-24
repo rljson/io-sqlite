@@ -6,14 +6,19 @@
 
 import { hip, rmhsh } from '@rljson/hash';
 import { equals } from '@rljson/json';
-import { exampleTableCfg, PropertiesTable, Rljson, TableCfg, TableType } from '@rljson/rljson';
+import {
+  exampleTableCfg,
+  PropertiesTable,
+  Rljson,
+  TableCfg,
+  TableType,
+} from '@rljson/rljson';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
-
 
 describe('IoSqlite', async () => {
   let io: IoSqlite;
@@ -29,7 +34,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  const createTable = async (key: string) => {
+  const createTableHelper = async (key: string) => {
     // Register a new table config
     const tableCfg: TableCfg = hip(exampleTableCfg({ key }));
     await io.write({
@@ -83,12 +88,12 @@ describe('IoSqlite', async () => {
   describe('createTable(request)', () => {
     it('should add a table', async () => {
       // Create a first table
-      await createTable('table1');
+      await createTableHelper('table1');
       let tables = await io.tables();
       expect(tables).toEqual(['tableCfgs', 'table1']);
 
       // Create a second table
-      await createTable('table2');
+      await createTableHelper('table2');
       tables = await io.tables();
       expect(tables).toEqual(['tableCfgs', 'table1', 'table2']);
     });
@@ -96,8 +101,8 @@ describe('IoSqlite', async () => {
     describe('createTable', async () => {
       describe('throws', async () => {
         it('if the table already exists', async () => {
-          await createTable('table');
-          await expect(createTable('table')).rejects.toThrow(
+          await createTableHelper('table');
+          await expect(createTableHelper('table')).rejects.toThrow(
             'Table table already exists',
           );
         });
@@ -118,7 +123,7 @@ describe('IoSqlite', async () => {
 
   describe('write(request)', async () => {
     it('adds data to existing data', async () => {
-      await createTable('tableA');
+      await createTableHelper('tableA');
 
       // Write a first item
       await io.write({
@@ -153,7 +158,7 @@ describe('IoSqlite', async () => {
     });
 
     it('does not add the same data twice', async () => {
-      await createTable('testTable');
+      await createTableHelper('testTable');
 
       const rows = [
         {
@@ -209,7 +214,7 @@ describe('IoSqlite', async () => {
       });
 
       it('when the table has a different type then an existing one', async () => {
-        await createTable('tableA');
+        await createTableHelper('tableA');
 
         await io.write({
           data: {
@@ -274,7 +279,7 @@ describe('IoSqlite', async () => {
 
     describe('returns Rljson containing the table with the one row', () => {
       it('when the data exists', async () => {
-        await createTable('tableA');
+        await createTableHelper('tableA');
 
         await io.write({
           data: {
@@ -307,7 +312,7 @@ describe('IoSqlite', async () => {
       });
 
       it('throws when the row does not exist', async () => {
-        await createTable('tableA');
+        await createTableHelper('tableA');
 
         await io.write({
           data: {
@@ -362,7 +367,7 @@ describe('IoSqlite', async () => {
       };
 
       beforeEach(async () => {
-        await createTable('testTable');
+        await createTableHelper('testTable');
         await io.write({ data: testData });
       });
 
@@ -541,7 +546,7 @@ describe('IoSqlite', async () => {
     });
 
     it('should return an empty array if no rows match the where clause', async () => {
-      await createTable('testTable');
+      await createTableHelper('testTable');
 
       await io.write({
         data: {
@@ -580,15 +585,15 @@ describe('IoSqlite', async () => {
   describe('dump()', () => {
     it('returns a copy of the complete database', async () => {
       await expectGolden('io-mem/dump/empty.json').toBe(await io.dump());
-      await createTable('table1');
-      await createTable('table2');
+      await createTableHelper('table1');
+      await createTableHelper('table2');
       await expectGolden('io-mem/dump/two-tables.json').toBe(await io.dump());
     });
   });
 
   describe('dumpTable(request)', () => {
     it('returns a copy of the table', async () => {
-      await createTable('table1');
+      await createTableHelper('table1');
 
       await io.write({
         data: {

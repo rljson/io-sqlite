@@ -32,7 +32,7 @@ export class IoSqlite implements Io {
   }
 
   // ...........................................................................
-  // Dump
+  // Dump (export all data from database)
 
   dump(): Promise<Rljson> {
     return this._dump();
