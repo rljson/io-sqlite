@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `Add conformance tests` here and below
+Replace `update-dna: Copy golden helpers` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "Add conformance tests"
+node scripts/create-branch.js "update-dna: Copy golden helpers"
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"Add conformance tests"
+git commit -am"update-dna: Copy golden helpers"
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "Add conformance tests" --body " "
+gh pr create --base main --title "update-dna: Copy golden helpers" --body " "
 ```
 
 ## Code review

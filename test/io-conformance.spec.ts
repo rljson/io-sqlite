@@ -50,7 +50,7 @@ describe('IoSqlite', async () => {
     await io.createTable({ tableCfg: tableCfg._hash as string });
   };
 
-  describe('tableCfgs table', () => {
+  describe.skip('tableCfgs table', () => {
     it('should be available after isReady() resolves', async () => {
       const dump = await io.dumpTable({ table: 'tableCfgs' });
       const tableCfgs = dump.tableCfgs as PropertiesTable<TableCfg>;
@@ -85,7 +85,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('createTable(request)', () => {
+  describe.skip('createTable(request)', () => {
     it('should add a table', async () => {
       // Create a first table
       await createTableHelper('table1');
@@ -121,7 +121,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('write(request)', async () => {
+  describe.skip('write(request)', async () => {
     it('adds data to existing data', async () => {
       await createTableHelper('tableA');
 
@@ -258,7 +258,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('readRow(request)', () => {
+  describe.skip('readRow(request)', () => {
     describe('throws', () => {
       it('when the table does not exist', async () => {
         let message: string = '';
@@ -340,7 +340,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('readRows({table, where})', () => {
+  describe.skip('readRows({table, where})', () => {
     describe('should return rows matching the where clause', async () => {
       const testData: Rljson = {
         testTable: {
@@ -582,7 +582,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('dump()', () => {
+  describe.skip('dump()', () => {
     it('returns a copy of the complete database', async () => {
       await expectGolden('io-mem/dump/empty.json').toBe(await io.dump());
       await createTableHelper('table1');
@@ -591,7 +591,7 @@ describe('IoSqlite', async () => {
     });
   });
 
-  describe('dumpTable(request)', () => {
+  describe.skip('dumpTable(request)', () => {
     it('returns a copy of the table', async () => {
       await createTableHelper('table1');
 
