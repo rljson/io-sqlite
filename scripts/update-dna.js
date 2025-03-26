@@ -14,7 +14,7 @@ import path from 'path';
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { blue, red } from './functions/colors.js';
+import { blue, gray, green, red, yellow } from './functions/colors.js';
 import { isCleanRepo } from './functions/is-clean-repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,24 +31,35 @@ const files = [
   '.prettierrc',
   'README.contributors.md',
   '.github/workflows/run-tests.yml',
+  'test/setup',
+];
+
+const filesToBeDeleted = [
+  'scripts/update-doc-settings-and-scripts.js',
+  'doc/workflows/update-from-template-project.md',
 ];
 
 const templateRepo = 'https://github.com/rljson/template-project.git';
 const localRepoPath = path.resolve(__dirname, '../../template-project');
+const ownRepoPath = path.resolve(__dirname, '..');
+
+const mustBeClean = false;
 
 function ensureTemplateRepoUpdated() {
   if (fs.existsSync(localRepoPath)) {
-    if (!isCleanRepo(localRepoPath)) {
-      console.error(blue('../template-project') + red(' is not clean. '));
-      console.log('Please commit or stash your changes.');
-      exit(1);
-    }
+    if (mustBeClean) {
+      if (isCleanRepo(localRepoPath)) {
+        console.error(blue('../template-project') + red(' is not clean. '));
+        console.log(yellow('Please commit or stash your changes.'));
+        process.exit(1);
+      }
 
-    console.log('Updating existing template-project...');
-    execSync('git fetch', { cwd: localRepoPath, stdio: 'inherit' });
-    execSync('git pull', { cwd: localRepoPath, stdio: 'inherit' });
+      console.log(gray('Updating existing template-project...'));
+      execSync('git fetch', { cwd: localRepoPath, stdio: 'inherit' });
+      execSync('git pull', { cwd: localRepoPath, stdio: 'inherit' });
+    }
   } else {
-    console.log('Cloning template-project into ../');
+    console.log(gray('Cloning template-project into ../'));
     execSync(`git clone ${templateRepo} "${localRepoPath}"`, {
       stdio: 'inherit',
     });
@@ -78,9 +89,19 @@ function copyFiles() {
 
     if (fs.existsSync(src)) {
       copyRecursive(src, dest);
-      console.log('Copied:', file);
+      console.log(gray('Copied: ' + file));
     } else {
-      console.warn('Not found in template:', file);
+      console.warn(red('Not found in template:', file));
+    }
+  }
+}
+
+function deleteFiles() {
+  for (const file of filesToBeDeleted) {
+    const filePath = path.join(ownRepoPath, file);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(gray('Deleted: ' + file));
     }
   }
 }
@@ -98,9 +119,9 @@ function replaceTemplateProject() {
       let content = fs.readFileSync(filePath, 'utf8');
       content = content.replace(/template-project/g, projectName);
       fs.writeFileSync(filePath, content);
-      console.log('Replaced in:', file);
+      console.log(gray('Replaced in: ' + file));
     } else {
-      console.warn('Not found:', file);
+      console.warn(red('Not found: ' + file));
     }
   }
 }
@@ -109,10 +130,11 @@ function main() {
   try {
     ensureTemplateRepoUpdated();
     copyFiles();
+    deleteFiles();
     replaceTemplateProject();
-    console.log('Done.');
+    console.log(green('Done.'));
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error(red('Error:', err.message));
   }
 }
 

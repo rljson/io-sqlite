@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { example } from '../src/example';
 
+// import { IoSqlite } from '../src/io-sqlite';
 import { expectGolden } from './setup/goldens';
 
 
