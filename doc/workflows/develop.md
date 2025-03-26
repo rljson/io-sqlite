@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `update-dna: Copy golden helpers` here and below
+Replace `open sqlite db/insert table/write first row` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "update-dna: Copy golden helpers"
+node scripts/create-branch.js "open sqlite db/insert table/write first row"
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"update-dna: Copy golden helpers"
+git commit -am"open sqlite db/insert table/write first row"
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "update-dna: Copy golden helpers" --body " "
+gh pr create --base main --title "open sqlite db/insert table/write first row" --body " "
 ```
 
 ## Code review

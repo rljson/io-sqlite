@@ -8,7 +8,7 @@ import { hip, rmhsh } from '@rljson/hash';
 import { equals } from '@rljson/json';
 import {
   exampleTableCfg,
-  PropertiesTable,
+  IngredientsTable,
   Rljson,
   TableCfg,
   TableType,
@@ -20,11 +20,13 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
 
+// import { IsReady } from '@rljson/is-ready';
+
 describe('IoSqlite', async () => {
   let io: IoSqlite;
 
   beforeEach(async () => {
-    io = IoSqlite.example();
+    io = await IoSqlite.example();
     await io.isReady();
   });
 
@@ -40,7 +42,7 @@ describe('IoSqlite', async () => {
     await io.write({
       data: {
         tableCfgs: {
-          _type: 'properties',
+          _type: 'ingredients',
           _data: [tableCfg],
         },
       },
@@ -53,7 +55,7 @@ describe('IoSqlite', async () => {
   describe.skip('tableCfgs table', () => {
     it('should be available after isReady() resolves', async () => {
       const dump = await io.dumpTable({ table: 'tableCfgs' });
-      const tableCfgs = dump.tableCfgs as PropertiesTable<TableCfg>;
+      const tableCfgs = dump.tableCfgs as IngredientsTable<TableCfg>;
       const tableCfg = tableCfgs._data[0];
 
       const cfgRef = tableCfg._hash;
@@ -75,11 +77,11 @@ describe('IoSqlite', async () => {
                 },
               },
               key: 'tableCfgs',
-              type: 'properties',
+              type: 'ingredients',
             },
           ],
           _tableCfg: cfgRef,
-          _type: 'properties',
+          _type: 'ingredients',
         }),
       );
     });
@@ -129,7 +131,7 @@ describe('IoSqlite', async () => {
       await io.write({
         data: {
           tableA: {
-            _type: 'properties',
+            _type: 'ingredients',
             _data: [{ keyA2: 'a2' }],
           },
         },
@@ -143,7 +145,7 @@ describe('IoSqlite', async () => {
       await io.write({
         data: {
           tableA: {
-            _type: 'properties',
+            _type: 'ingredients',
             _data: [{ keyB2: 'b2' }],
           },
         },
@@ -181,7 +183,7 @@ describe('IoSqlite', async () => {
 
       const testData: Rljson = {
         testTable: {
-          _type: 'properties',
+          _type: 'ingredients',
           _data: rows,
         },
       };
@@ -204,7 +206,7 @@ describe('IoSqlite', async () => {
 
         try {
           await io.write({
-            data: { testTable: { _type: 'properties', _data: [] } },
+            data: { testTable: { _type: 'ingredients', _data: [] } },
           });
         } catch (error) {
           message = (error as Error).message;
@@ -219,7 +221,7 @@ describe('IoSqlite', async () => {
         await io.write({
           data: {
             tableA: {
-              _type: 'properties',
+              _type: 'ingredients',
               _data: [{ keyA2: 'a2' }],
             },
           },
@@ -252,7 +254,7 @@ describe('IoSqlite', async () => {
         }
 
         expect(message).toBe(
-          'Table tableA has different types: "properties" vs "cakes"',
+          'Table tableA has different types: "ingredients" vs "cakes"',
         );
       });
     });
@@ -284,7 +286,7 @@ describe('IoSqlite', async () => {
         await io.write({
           data: {
             tableA: {
-              _type: 'properties',
+              _type: 'ingredients',
               _data: [{ keyA2: 'a2', keyA3: 'a3' }],
             },
           },
@@ -317,7 +319,7 @@ describe('IoSqlite', async () => {
         await io.write({
           data: {
             tableA: {
-              _type: 'properties',
+              _type: 'ingredients',
               _data: [{ keyA2: 'a2', keyA3: 'a3' }],
             },
           },
@@ -344,7 +346,7 @@ describe('IoSqlite', async () => {
     describe('should return rows matching the where clause', async () => {
       const testData: Rljson = {
         testTable: {
-          _type: 'properties',
+          _type: 'ingredients',
           _data: [
             {
               string: 'hello',
@@ -551,7 +553,7 @@ describe('IoSqlite', async () => {
       await io.write({
         data: {
           testTable: {
-            _type: 'properties',
+            _type: 'ingredients',
             _data: [
               { column1: 'value1', column2: 'value2' },
               { column1: 'value3', column2: 'value4' },
@@ -598,7 +600,7 @@ describe('IoSqlite', async () => {
       await io.write({
         data: {
           table1: {
-            _type: 'properties',
+            _type: 'ingredients',
             _data: [{ keyA2: 'a2' }],
           },
         },
@@ -607,7 +609,7 @@ describe('IoSqlite', async () => {
       expect(await io.dumpTable({ table: 'table1' })).toEqual({
         table1: {
           _data: [{ keyA2: 'a2', _hash: 'apLP3I2XLnVm13umIZdVhV' }],
-          _type: 'properties',
+          _type: 'ingredients',
           _hash: 'DKwor-pULmCs6RY-sMyfrM',
         },
       });
