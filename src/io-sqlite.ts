@@ -8,14 +8,17 @@ import { hip, hsh } from '@rljson/hash';
 import { Io } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { JsonValue } from '@rljson/json';
-import { Rljson, TableCfg, TableCfgRef } from '@rljson/rljson';
+import { iterateTables, Rljson, TableCfg } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
 import { mkdtemp } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
+import { DsSqliteStandards } from './sqlite-standards.ts';
+
 type DBType = Database.Database;
+const _sql = new DsSqliteStandards();
 
 /* v8 ignore start */
 
@@ -79,21 +82,42 @@ export class IoSqlite implements Io {
     return this._readRows(request);
   }
 
-  // ...........................................................................
-  // Write
+  async tableCfgs(): Promise<Rljson> {
+    const result: Rljson = {};
+    const returnValue = this._db.prepare(_sql.currentTableCfgs).all();
+    result.tableCfgs = JSON.parse(JSON.stringify(returnValue));
+    return result;
+  }
 
+  async allTableNames(): Promise<string[]> {
+    const query = _sql.allTableNames;
+    const returnValue = this._db.prepare(query).all();
+    const tableNames = (returnValue as { name: string }[]).map(
+      (row) => row.name,
+    );
+    return tableNames;
+  }
+
+  // ...........................................................................
+  // Write data into the respective table
   write(request: { data: Rljson }): Promise<void> {
     return this._write(request);
   }
 
   // ...........................................................................
   // Table management
-  createTable(request: { tableCfg: string }): Promise<void> {
+  // createTable(request: { tableCfg: TableCfg }): Promise<void> {
+  //   console.log(request.tableCfg);
+  //   return Promise.resolve();
+  // }
+
+  createTable(request: { tableCfg: TableCfg }): Promise<void> {
     return this._createTable(request);
   }
 
   async tables(): Promise<Rljson> {
-    return this._tables();
+    const result: Rljson = {};
+    return result;
   }
 
   // ######################
@@ -117,8 +141,10 @@ export class IoSqlite implements Io {
       key: 'tableCfgs',
       type: 'ingredients',
       columns: {
+        version: { key: 'version', type: 'number', previous: 'number' },
         key: { key: 'key', type: 'string', previous: 'string' },
         type: { key: 'type', type: 'string', previous: 'string' },
+        tableCfg: { key: 'tableCfg', type: 'string', previous: 'string' },
       },
     };
 
@@ -128,19 +154,7 @@ export class IoSqlite implements Io {
 
     //create main table if it does not exist yet
     try {
-      this._db
-        .prepare(
-          `
-      CREATE TABLE IF NOT EXISTS tableCfgs (
-        _hash TEXT PRIMARY KEY,
-        version INTEGER,
-        key TEXT KEY,
-        type TEXT,
-        previous TEXT
-      );
-    `,
-        )
-        .run();
+      this._db.prepare(_sql.createMainTable).run();
     } catch (error) {
       console.error(error);
     }
@@ -148,28 +162,80 @@ export class IoSqlite implements Io {
     // Todo: Write tableCfg as first row into tableCfgs tables
     // As this is the first row to be entered, it is entered manually
     this._db
-      .prepare(
-        `
-      INSERT INTO tableCfgs (_hash, version, key, type) VALUES (?, ?, ?, ?);
-    `,
-      )
-      .run(tableCfgHashed._hash, tableCfg.version, tableCfg.key, tableCfg.type);
+      .prepare(_sql.insertTableCfg)
+      .run(
+        tableCfgHashed._hash,
+        tableCfg.version,
+        tableCfg.key,
+        tableCfg.type,
+        JSON.stringify(tableCfg),
+      );
   };
 
   // ...........................................................................
-  private async _createTable(request: {
-    tableCfg: TableCfgRef;
-  }): Promise<void> {
-    // Get table cfg with hash "tableCfg" from table tableCfgs
-    const config = {}; // Todo replace
+  private async _createTable(request: { tableCfg: TableCfg }): Promise<void> {
+    // Create table in sqlite database
+    // Check if given table name is valid
+    _sql.isGood(request.tableCfg.key);
+    _sql.isGood(request.tableCfg.type);
 
-    if (!config) {
-      throw new Error(`Table config ${request.tableCfg} not found`);
+    //create config hash
+    const tableCfgHashed = hsh(request.tableCfg);
+
+    // Check if table exists
+    const exists = this._db
+      .prepare(_sql.tableCfg)
+      .get(
+        request.tableCfg.key,
+        request.tableCfg.type,
+        request.tableCfg.version,
+      );
+
+    if (!exists) {
+      // Insert tableCfg into tableCfgs
+      try {
+        this._db
+          .prepare(_sql.insertTableCfg)
+          .run(
+            tableCfgHashed._hash,
+            request.tableCfg.version,
+            request.tableCfg.key,
+            request.tableCfg.type,
+            JSON.stringify(request.tableCfg),
+          );
+      } catch (error) {
+        console.error(error);
+        throw error;
+      }
+    } else {
+      throw new Error(`Table ${request.tableCfg.key} already exists`);
+    }
+
+    // Create actual table with name from tableCfg
+    const tableName = request.tableCfg.key;
+    const columnsCfg = request.tableCfg.columns;
+    const columns = Object.keys(columnsCfg).flatMap((key) => {
+      const column = columnsCfg[key];
+      const sqliteType = _sql.dataType(column.type);
+      if (sqliteType) {
+        return `${column.key} ${sqliteType}`;
+      }
+      console.warn(
+        `Skipping column ${column.key} with unsupported type ${column.type}`,
+      );
+      return [];
+    });
+
+    const columnsString = columns.join(', ');
+    try {
+      this._db.exec(_sql.createTable(tableName, columnsString));
+    } catch (error) {
+      console.error(`Error creating table ${tableName}:`, error);
     }
 
     // Get key and type from config
     // const { key, type } = config;
-    const key = 'xyz';
+    const key = 'table1';
 
     // Check if, table already exists with key
     const existing = false; // Todo replace
@@ -186,9 +252,9 @@ export class IoSqlite implements Io {
   }
 
   // ...........................................................................
-  private async _tables(): Promise<Rljson> {
-    throw new Error('Not implemented');
-  }
+  // private async _tables(): Promise<Rljson> {
+  //   throw new Error('Not implemented');
+  // }
 
   // ...........................................................................
   private async _readRow(request: {
@@ -209,13 +275,8 @@ export class IoSqlite implements Io {
   // ...........................................................................
 
   private async _dump(): Promise<Rljson> {
-    const tablesQuery = `
-      SELECT name
-      FROM sqlite_master
-      WHERE type='table' AND name NOT LIKE 'sqlite_%';
-    `;
     const returnFile: Rljson = {};
-    const tables = this._db.prepare(tablesQuery).all();
+    const tables = this._db.prepare(_sql.allTableNames).all();
 
     for (const table of tables as { name: string }[]) {
       const tableDump: Rljson = await this._dumpTable({ table: table.name });
@@ -228,16 +289,41 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
-    const query = `SELECT * FROM ${request.table}`;
     let returnFile: Rljson = {};
-    const returnValue = this._db.prepare(query).all();
+    const returnValue = this._db.prepare(_sql.allData(request.table)).all();
     returnFile = JSON.parse(JSON.stringify(returnValue));
     return returnFile;
   }
 
   // ...........................................................................
   private async _write(request: { data: Rljson }): Promise<void> {
-    throw new Error('Not implemented ' + request);
+    // const tableName = Object.keys(request.data)[0];
+    const hashedData = hsh(request.data);
+    iterateTables(hashedData, (tableName, tableData) => {
+      for (const row of tableData._data) {
+        const columns = Object.keys(row);
+        const placeholders = columns.map(() => '?').join(', ');
+        const query = `INSERT INTO ${tableName} (${columns.join(
+          ', ',
+        )}) VALUES (${placeholders})`;
+        const values = columns.map((column) => row[column]);
+        this._db.prepare(query).run(...values);
+      }
+    });
+  }
+
+  public getTableColumns(tableName: string): { name: string; type: string }[] {
+    const query = `PRAGMA table_info(${tableName})`;
+    const result: { name: string; type: string }[] = [];
+    // Assuming a database execution function `executeQuery` exists
+    const rows = this._db.prepare(query).all() as {
+      name: string;
+      type: string;
+    }[];
+    for (const row of rows) {
+      result.push({ name: row.name, type: row.type });
+    }
+    return result;
   }
 }
 

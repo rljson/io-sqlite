@@ -1,0 +1,10 @@
+[
+  {
+    "_hash": "70WEth8-bP5fNPCURWxzFc",
+    "version": 1,
+    "key": "tableCfgs",
+    "type": "ingredients",
+    "tableCfg": "{\"version\":1,\"key\":\"tableCfgs\",\"type\":\"ingredients\",\"columns\":{\"version\":{\"key\":\"version\",\"type\":\"number\",\"previous\":\"number\",\"_hash\":\"N0W-IIVLorp_JsZ7zkiUsF\"},\"key\":{\"key\":\"key\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"ihagAmOoQOmhFSVINwQw9A\"},\"type\":{\"key\":\"type\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"PSoWCBj2arLb56BHBnYDUO\"},\"tableCfg\":{\"key\":\"tableCfg\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"2OmqyrteemY1Bk_ou_gaRk\"},\"_hash\":\"cKe3LAL7jNqnEiBaMGso6O\"},\"_hash\":\"70WEth8-bP5fNPCURWxzFc\"}",
+    "previous": null
+  }
+]

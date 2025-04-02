@@ -1,76 +1,12 @@
 {
-  "_hash": "kLaUI1ELu3ekS9WPX-CYku",
-  "tableCfgs": {
-    "_data": [
-      {
-        "key": "tableCfgs",
-        "type": "properties",
-        "columns": {
-          "key": {
-            "key": "key",
-            "type": "string",
-            "previous": "string",
-            "_hash": "ihagAmOoQOmhFSVINwQw9A"
-          },
-          "type": {
-            "key": "type",
-            "type": "string",
-            "previous": "string",
-            "_hash": "PSoWCBj2arLb56BHBnYDUO"
-          },
-          "_hash": "4rRRswbOKxipAkL7YAqL4E"
-        },
-        "_hash": "ERJHhmSsLUeZBZb6scDw5M"
-      },
-      {
-        "key": "table1",
-        "columns": {
-          "a": {
-            "key": "a",
-            "type": "string",
-            "_hash": "4sOy83iAANZEj6_Lmlg0d3"
-          },
-          "b": {
-            "key": "b",
-            "type": "number",
-            "_hash": "dHYaVsRiXeP_WY7Qrd5Y8J"
-          },
-          "_hash": "MTFVrEq9Ps-ok4pltTHfLq"
-        },
-        "type": "properties",
-        "_hash": "hRfamwpYwNr5QJ3AszdM_k"
-      },
-      {
-        "key": "table2",
-        "columns": {
-          "a": {
-            "key": "a",
-            "type": "string",
-            "_hash": "4sOy83iAANZEj6_Lmlg0d3"
-          },
-          "b": {
-            "key": "b",
-            "type": "number",
-            "_hash": "dHYaVsRiXeP_WY7Qrd5Y8J"
-          },
-          "_hash": "MTFVrEq9Ps-ok4pltTHfLq"
-        },
-        "type": "properties",
-        "_hash": "BvZCee5PvjBcZePfbWbbOI"
-      }
-    ],
-    "_type": "properties",
-    "_tableCfg": "ERJHhmSsLUeZBZb6scDw5M",
-    "_hash": "5otyLLkJeJtua53uALt_ls"
-  },
-  "table1": {
-    "_data": [],
-    "_type": "properties",
-    "_hash": "DKwor-pULmCs6RY-sMyfrM"
-  },
-  "table2": {
-    "_data": [],
-    "_type": "properties",
-    "_hash": "DKwor-pULmCs6RY-sMyfrM"
-  }
+  "tableCfgs": [
+    {
+      "_hash": "70WEth8-bP5fNPCURWxzFc",
+      "version": 1,
+      "key": "tableCfgs",
+      "type": "ingredients",
+      "tableCfg": "{\"version\":1,\"key\":\"tableCfgs\",\"type\":\"ingredients\",\"columns\":{\"version\":{\"key\":\"version\",\"type\":\"number\",\"previous\":\"number\",\"_hash\":\"N0W-IIVLorp_JsZ7zkiUsF\"},\"key\":{\"key\":\"key\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"ihagAmOoQOmhFSVINwQw9A\"},\"type\":{\"key\":\"type\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"PSoWCBj2arLb56BHBnYDUO\"},\"tableCfg\":{\"key\":\"tableCfg\",\"type\":\"string\",\"previous\":\"string\",\"_hash\":\"2OmqyrteemY1Bk_ou_gaRk\"},\"_hash\":\"cKe3LAL7jNqnEiBaMGso6O\"},\"_hash\":\"70WEth8-bP5fNPCURWxzFc\"}",
+      "previous": null
+    }
+  ]
 }
