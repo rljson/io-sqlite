@@ -89,27 +89,40 @@ export class IoSqlite implements Io {
     return result;
   }
 
+  private async _tableCfg(tableName: string): Promise<TableCfg> {
+    let returnValue: any;
+    let returnCfg: TableCfg;
+    try {
+      returnValue = this._db.prepare(_sql.currentTableCfg).get(tableName);
+      returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
+    return returnCfg;
+  }
+
   async allTableNames(): Promise<string[]> {
-    const query = _sql.allTableNames;
+    const query = _sql.tableNames;
     const returnValue = this._db.prepare(query).all();
-    const tableNames = (returnValue as { name: string }[]).map(
-      (row) => row.name,
+    const tableNames = (returnValue as { name: string }[]).map((row) =>
+      _sql.remFix(row.name),
     );
     return tableNames;
   }
 
   // ...........................................................................
   // Write data into the respective table
-  write(request: { data: Rljson }): Promise<void> {
-    return this._write(request);
+  async write(request: { data: Rljson }): Promise<void> {
+    try {
+      await this._write(request);
+    } catch (error) {
+      throw new Error(
+        `${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
-
-  // ...........................................................................
-  // Table management
-  // createTable(request: { tableCfg: TableCfg }): Promise<void> {
-  //   console.log(request.tableCfg);
-  //   return Promise.resolve();
-  // }
 
   createTable(request: { tableCfg: TableCfg }): Promise<void> {
     return this._createTable(request);
@@ -161,23 +174,24 @@ export class IoSqlite implements Io {
 
     // Todo: Write tableCfg as first row into tableCfgs tables
     // As this is the first row to be entered, it is entered manually
-    this._db
-      .prepare(_sql.insertTableCfg)
-      .run(
-        tableCfgHashed._hash,
-        tableCfg.version,
-        tableCfg.key,
-        tableCfg.type,
-        JSON.stringify(tableCfg),
-      );
+    try {
+      this._db
+        .prepare(_sql.insertTableCfg)
+        .run(
+          tableCfgHashed._hash,
+          tableCfg.version,
+          tableCfg.key,
+          tableCfg.type,
+          JSON.stringify(tableCfg),
+        );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // ...........................................................................
   private async _createTable(request: { tableCfg: TableCfg }): Promise<void> {
     // Create table in sqlite database
-    // Check if given table name is valid
-    _sql.isGood(request.tableCfg.key);
-    _sql.isGood(request.tableCfg.type);
 
     //create config hash
     const tableCfgHashed = hsh(request.tableCfg);
@@ -212,13 +226,13 @@ export class IoSqlite implements Io {
     }
 
     // Create actual table with name from tableCfg
-    const tableName = request.tableCfg.key;
+    const tableName = _sql.addFix(request.tableCfg.key);
     const columnsCfg = request.tableCfg.columns;
     const columns = Object.keys(columnsCfg).flatMap((key) => {
       const column = columnsCfg[key];
       const sqliteType = _sql.dataType(column.type);
       if (sqliteType) {
-        return `${column.key} ${sqliteType}`;
+        return `${_sql.addFix(column.key)} ${sqliteType}`;
       }
       console.warn(
         `Skipping column ${column.key} with unsupported type ${column.type}`,
@@ -232,23 +246,6 @@ export class IoSqlite implements Io {
     } catch (error) {
       console.error(`Error creating table ${tableName}:`, error);
     }
-
-    // Get key and type from config
-    // const { key, type } = config;
-    const key = 'table1';
-
-    // Check if, table already exists with key
-    const existing = false; // Todo replace
-    if (existing) {
-      throw new Error(`Table ${key} already exists`);
-    }
-
-    // Create table
-
-    console.log(request.tableCfg);
-
-    // const createTableQuery =
-    //   'CREATE TABLE ${   request.tableCfg.nam';
   }
 
   // ...........................................................................
@@ -269,19 +266,74 @@ export class IoSqlite implements Io {
     table: string;
     where: { [column: string]: JsonValue };
   }): Promise<Rljson> {
-    throw new Error('Not implemented ' + request);
+    const fixedTableName = _sql.addFix(request.table);
+    if (!this._tableExists(fixedTableName)) {
+      throw new Error(`Table ${request.table} does not exist`);
+    }
+
+    const columnTypes: { [key: string]: string } = await this._columnTypes(
+      request.table,
+    );
+
+    const columnsResult = this._db
+      .prepare(_sql.columnNames(fixedTableName))
+      .all() as { name: string }[];
+    const columns = columnsResult.map((row) => row.name);
+    const columnNames = await this._returnColumns(columns);
+
+    const whereString = this._whereString(Object.entries(request.where));
+    const query = _sql.selection(fixedTableName, columnNames, whereString);
+    const returnValue = this._db.prepare(query).all() as {
+      [key: string]: any;
+    }[];
+
+    const convertedResult: { [key: string]: any }[] = [];
+    for (const row of returnValue) {
+      const convertedRow: { [key: string]: any } = {};
+      for (const column of columns) {
+        const columnName = _sql.remFix(column);
+        switch (columnTypes[columnName]) {
+          case 'boolean':
+            convertedRow[columnName] = row[columnName] === 1 ? true : false;
+            break;
+          case 'null':
+            convertedRow[columnName] = null as any;
+            break;
+          case 'object':
+          case 'jsonArray':
+          case 'json':
+            convertedRow[columnName] = JSON.parse(row[columnName]);
+            break;
+          case undefined:
+            convertedRow[columnName] = row[columnName];
+            break;
+          default:
+            convertedRow[columnName] = row[columnName];
+        }
+      }
+
+      convertedResult.push(convertedRow);
+    }
+
+    const result: Rljson = {
+      [request.table]: {
+        _data: convertedResult,
+      },
+    } as any;
+
+    return result;
   }
 
   // ...........................................................................
 
   private async _dump(): Promise<Rljson> {
     const returnFile: Rljson = {};
-    const tables = this._db.prepare(_sql.allTableNames).all();
+    const tables = this._db.prepare(_sql.tableNames).all();
 
     for (const table of tables as { name: string }[]) {
       const tableDump: Rljson = await this._dumpTable({ table: table.name });
-      const tableDumpJson = JSON.parse(JSON.stringify(tableDump));
-      returnFile[table.name] = tableDumpJson;
+
+      returnFile[_sql.remFix(table.name)] = tableDump[_sql.remFix(table.name)];
     }
 
     return returnFile;
@@ -289,42 +341,232 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
-    let returnFile: Rljson = {};
-    const returnValue = this._db.prepare(_sql.allData(request.table)).all();
-    returnFile = JSON.parse(JSON.stringify(returnValue));
+    const fixedTableName = request.table.endsWith(_sql.postFix)
+      ? request.table
+      : _sql.addFix(request.table);
+    const columnNames = this._db
+      .prepare(_sql.columnNames(fixedTableName))
+      .all()
+      .map(
+        (row) =>
+          `${(row as { name: string }).name} AS ${_sql.remFix(
+            (row as { name: string }).name,
+          )}`,
+      ) as string[];
+
+    const returnFile: Rljson = {};
+    let returnValue;
+    try {
+      returnValue = this._db
+        .prepare(_sql.allData(fixedTableName, columnNames.join(', ')))
+        .all();
+    } catch (error) {
+      console.error(`Error dumping table ${request.table}:`, error);
+      throw new Error(`Failed to dump table ${request.table}`);
+    }
+    const defixedTableName = _sql.remFix(fixedTableName);
+    returnFile[defixedTableName] = JSON.parse(JSON.stringify(returnValue));
+
     return returnFile;
   }
 
   // ...........................................................................
   private async _write(request: { data: Rljson }): Promise<void> {
-    // const tableName = Object.keys(request.data)[0];
+    // Preparation
     const hashedData = hsh(request.data);
-    iterateTables(hashedData, (tableName, tableData) => {
+    const errorStore = new Map<number, string>();
+    let errorCount = 0;
+
+    // Loop through the tables in the data
+    iterateTables(hashedData, async (tableName, tableData) => {
+      // Create internal table name
+      const fixedTableName = _sql.addFix(tableName);
+
+      // Check if table exists
+      if (!this._tableExists(fixedTableName)) {
+        errorCount++;
+        errorStore.set(errorCount, `Table ${tableName} does not exist`);
+        return;
+      }
+
+      // Check if table type is correct
+      const tableType = request.data[tableName]._type.toString();
+      if (!this._tableTypeCheck(tableName, tableType)) {
+        errorCount++;
+        errorStore.set(
+          errorCount,
+          `Table type check failed for table ${tableName}, ${tableType}`,
+        );
+        return;
+      }
+
+      const columnTypes = await this._columnTypes(tableName);
+
       for (const row of tableData._data) {
+        // Prepare and run the SQL query
+        // (each row might have a different number of columns)
         const columns = Object.keys(row);
+        const fixedColumnNames = columns.map((column) => _sql.addFix(column));
         const placeholders = columns.map(() => '?').join(', ');
-        const query = `INSERT INTO ${tableName} (${columns.join(
+        const query = `INSERT INTO ${fixedTableName} (${fixedColumnNames.join(
           ', ',
         )}) VALUES (${placeholders})`;
-        const values = columns.map((column) => row[column]);
-        this._db.prepare(query).run(...values);
+
+        // Put values into the necessary format
+        const rowValues = this._valueList(columns, columnTypes, row);
+
+        // Run the query
+        try {
+          this._db.prepare(query).run(rowValues);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          const fixedErrorMessage = errorMessage.replace(_sql.postFix, '');
+
+          errorCount++;
+          errorStore.set(
+            errorCount,
+            `Error inserting into table ${tableName}: ${fixedErrorMessage}`,
+          );
+        }
       }
     });
+
+    if (errorCount > 0) {
+      const errorMessages = Array.from(errorStore.values()).join(', ');
+      throw new Error(`Errors occurred: ${errorMessages}`);
+    }
   }
 
-  public getTableColumns(tableName: string): { name: string; type: string }[] {
-    const query = `PRAGMA table_info(${tableName})`;
+  public async allColumnNames(
+    tableName: string,
+  ): Promise<{ name: string; type: string }[]> {
+    let actualTableName = tableName;
+    if (tableName !== _sql.mainTable) {
+      actualTableName = tableName.endsWith(_sql.postFix)
+        ? tableName
+        : _sql.addFix(tableName);
+    }
     const result: { name: string; type: string }[] = [];
-    // Assuming a database execution function `executeQuery` exists
-    const rows = this._db.prepare(query).all() as {
+    const rows = this._db.prepare(_sql.columnNames(actualTableName)).all() as {
       name: string;
       type: string;
     }[];
     for (const row of rows) {
-      result.push({ name: row.name, type: row.type });
+      result.push({ name: _sql.remFix(row.name), type: row.type });
     }
     return result;
   }
+
+  _tableExists(tableName: string): boolean {
+    const fixedTableName = tableName.endsWith(_sql.postFix)
+      ? tableName
+      : _sql.addFix(tableName);
+    const result = this._db.prepare(_sql.tableExists).get(fixedTableName) as {
+      count: number;
+    };
+    return result ? true : false;
+  }
+
+  _tableTypeCheck(tableName: string, tableType: string): boolean {
+    const result = this._db.prepare(_sql.tableTypeCheck).get(tableName) as {
+      type_px: string;
+    };
+    return tableType === result.type_px ? true : false;
+  }
+
+  _currentCount(tableName: string): number {
+    const result = this._db.prepare(_sql.currentCount(tableName)).get() as {
+      'COUNT(*)': number;
+    };
+    return result['COUNT(*)'];
+  }
+
+  _valueList(
+    originalColumns: string[],
+    columnTypes: { [key: string]: string },
+    row: any,
+  ): any[] {
+    const valueList: any[] = [];
+
+    for (const column of originalColumns) {
+      switch (columnTypes[column]) {
+        case 'string':
+          valueList.push(row[column]);
+          break;
+        case 'number':
+          valueList.push(Number(row[column]));
+          break;
+        case 'boolean':
+          valueList.push(row[column] ? 1 : 0);
+          break;
+        case 'object':
+          valueList.push(JSON.stringify(row[column]));
+          break;
+        case 'null':
+          valueList.push(null);
+          break;
+        case 'jsonArray':
+          valueList.push(JSON.stringify(row[column]));
+          break;
+        case 'json':
+          valueList.push(JSON.stringify(row[column]));
+          break;
+        case undefined:
+          valueList.push(`${row[column]}`);
+          break;
+        default:
+          throw new Error(`Unsupported column type ${columnTypes[column]}`);
+      }
+    }
+
+    return valueList;
+  }
+
+  async _returnColumns(columns: string[]): Promise<string> {
+    const columnNames: string[] = [];
+    for (const column of columns) {
+      columnNames.push(`${column} AS [${_sql.remFix(column)}]`);
+    }
+
+    return columnNames.join(', ');
+  }
+
+  _whereString(whereClause: [string, JsonValue][]): string {
+    let whereString: string = ' ';
+    for (const [column, value] of whereClause) {
+      if (typeof value === 'string') {
+        whereString += `${_sql.addFix(column)} = '${value}' AND `;
+      } else if (typeof value === 'number') {
+        whereString += `${_sql.addFix(column)} = ${value} AND `;
+      } else if (typeof value === 'boolean') {
+        whereString += `${_sql.addFix(column)} = ${value ? 1 : 0} AND `;
+      } else if (value === null) {
+        whereString += `${_sql.addFix(column)} IS NULL AND `;
+      } else if (typeof value === 'object') {
+        whereString += `${_sql.addFix(column)} = '${JSON.stringify(
+          value,
+        )}' AND `;
+      } else {
+        throw new Error(`Unsupported value type for column ${column}`);
+      }
+    }
+
+    whereString = whereString.endsWith('AND ')
+      ? whereString.slice(0, -5)
+      : whereString; // remove last ' AND '
+
+    return whereString;
+  }
+
+  async _columnTypes(tableName: string): Promise<{ [key: string]: string }> {
+    const tableCfg = await this._tableCfg(tableName);
+    const columnTypes: { [key: string]: string } = {};
+    for (const [key, column] of Object.entries(tableCfg.columns)) {
+      columnTypes[key] = column.type;
+    }
+    return columnTypes;
+  }
 }
 
-/* v8 ignore stop */
+//* v8 ignore stop */

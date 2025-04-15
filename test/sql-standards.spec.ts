@@ -17,12 +17,17 @@ import { SqlStandards } from '../src/sql-standards';
 // found in the LICENSE file in the root of this package.
 
 class SqlStandardsImpl extends SqlStandards {
-  allColumnNames(tableName: string): string {
+  public tableName = 'testTable';
+  tableNames = 'testTables';
+
+  columnNames(tableName: string): string {
     console.log(tableName);
     throw new Error('Method not implemented.');
   }
-  tableName = 'testTable';
-  tableNames = 'testTables';
+
+  get tableExists(): string {
+    return `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
+  }
 
   foreignKeyList(tableName: string): string {
     return `PRAGMA foreign_key_list(${tableName})`;
@@ -43,9 +48,6 @@ class SqlStandardsImpl extends SqlStandards {
       )
       .join(', ');
   }
-  allTableNames(): string {
-    return `SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%'`;
-  }
 }
 
 suite('SqlStandards', () => {
@@ -53,22 +55,23 @@ suite('SqlStandards', () => {
 
   test('centralSource generates correct query', () => {
     const winNumber = '12345';
-    const expectedQuery = `(SELECT DISTINCT winNumber, articleType FROM current_articles WHERE winNumber = '12345')`;
+    const expectedQuery = `(SELECT DISTINCT winNumber, articleType FROM tableCfgs WHERE winNumber = '12345')`;
     expect(sqlStandards.centralSource(winNumber)).toBe(expectedQuery);
   });
 
   test('joinExpression generates correct query', () => {
-    const tableName = 'testTable';
     const alias = 't';
     const expectedQuery = `LEFT JOIN testTable AS t \n`;
-    expect(sqlStandards.joinExpression(tableName, alias)).toBe(expectedQuery);
+    expect(sqlStandards.joinExpression(sqlStandards.tableName, alias)).toBe(
+      expectedQuery,
+    );
   });
 
   test('layerSource generates correct query', () => {
     const winNumber = '12345';
     const tableName = 'testLayer';
     const expectedQuery = `(SELECT DISTINCT articleType,\n _hash
-              FROM current_articles\n WHERE winNumber = '12345'
+              FROM tableCfgs\n WHERE winNumber = '12345'
               AND layer = 'testLayer')`;
     expect(sqlStandards.layerSource(winNumber, tableName)).toBe(expectedQuery);
   });
@@ -97,7 +100,7 @@ suite('SqlStandards', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs (_hash TEXT PRIMARY KEY, version INTEGER, key TEXT KEY, type TEXT, tableCfg TEXT, previous TEXT);`;
+    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs_px (_hash TEXT PRIMARY KEY, version_px INTEGER, key_px TEXT KEY, type_px TEXT, tableCfg_px TEXT, previous_px TEXT);`;
     expect(sqlStandards.createMainTable).toBe(expectedQuery);
   });
 
@@ -135,11 +138,11 @@ suite('SqlStandards', () => {
     expect(sqlStandards.dropTempTable(tableName)).toBe(expectedQuery);
   });
 
-  test('refillTable generates correct query', () => {
+  test('fillTable generates correct query', () => {
     const tableName = 'testTable';
     const commonColumns = ['column1', 'column2'];
     const expectedQuery = `INSERT INTO testTable (column1, column2) SELECT column1, column2 FROM testTable_temp`;
-    expect(sqlStandards.refillTable(tableName, commonColumns)).toBe(
+    expect(sqlStandards.fillTable(tableName, commonColumns)).toBe(
       expectedQuery,
     );
   });
@@ -175,8 +178,9 @@ suite('SqlStandards', () => {
   });
 
   test('currentCount generates correct query', () => {
-    const tableName = 'testTable';
-    const expectedQuery = `SELECT COUNT(*) FROM testTable`;
-    expect(sqlStandards.currentCount(tableName)).toBe(expectedQuery);
+    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${sqlStandards.postFix}`;
+    expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
+      expectedQuery,
+    );
   });
 });

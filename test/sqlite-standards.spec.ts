@@ -38,7 +38,7 @@ suite('DsSqliteStandards', () => {
   test('allColumns generates correct query', () => {
     const tableName = 'testTable';
     const expectedQuery = `PRAGMA table_info(${tableName})`;
-    expect(dsSqliteStandards.allColumnNames(tableName)).toBe(expectedQuery);
+    expect(dsSqliteStandards.columnNames(tableName)).toBe(expectedQuery);
   });
 
   test('tableReferences generates correct query', () => {
@@ -49,7 +49,7 @@ suite('DsSqliteStandards', () => {
     );
   });
   test('allTableNames generates correct query', () => {
-    const expectedQuery = `SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%'`;
-    expect(dsSqliteStandards.allTableNames()).toBe(expectedQuery);
+    const expectedQuery = `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
+    expect(dsSqliteStandards.tableNames).toBe(expectedQuery);
   });
 });

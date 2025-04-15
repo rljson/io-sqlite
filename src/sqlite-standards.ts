@@ -20,9 +20,6 @@ export class DsSqliteStandards extends SqlStandards {
       )
       .join(', ');
   }
-  public get allTableNames() {
-    return `SELECT name FROM sqlite_master WHERE type='table' and name NOT LIKE 'sqlite_%'`;
-  }
 
   public get tableName() {
     return `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
@@ -34,25 +31,32 @@ export class DsSqliteStandards extends SqlStandards {
     return `PRAGMA foreign_key_list(${tableName})`;
   }
 
-  public allColumnNames(tableName: string) {
+  public columnNames(tableName: string) {
     return `PRAGMA table_info(${tableName})`;
   }
 
-  public allData(tableName: string) {
-    return `SELECT * FROM ${tableName}`;
+  // retrieve all data from a table using the original column names
+  // i.e. without the postfix
+  public allData(tableName: string, namedColumns?: string) {
+    if (!namedColumns) {
+      namedColumns = `*`;
+    }
+    return `SELECT ${namedColumns} FROM ${tableName}`;
   }
 
   public get tableCfg() {
-    return `SELECT * FROM tableCfgs WHERE key = ? AND type = ? AND version = ?`;
+    return `SELECT * FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ? AND type${this.postFix} = ? AND version${this.postFix} = ?`;
   }
 
   public get insertTableCfg() {
-    return `INSERT INTO tableCfgs ( _hash, version, key, type, tableCfg) VALUES (?, ?, ?, ?, ?)`;
+    return `INSERT INTO ${this.mainTable}${this.postFix} ( _hash, version${this.postFix}, key${this.postFix}, type${this.postFix}, tableCfg${this.postFix}) VALUES (?, ?, ?, ?, ?)`;
   }
 
   ///Equivalent data types
   sqliteDatatypes = [
     { type: 'string', sql: 'TEXT' },
+    { type: 'jsonArray', sql: 'TEXT' },
+    { type: 'json', sql: 'TEXT' },
     { type: 'number', sql: 'REAL' },
     { type: 'boolean', sql: 'INTEGER' },
     { type: 'undefined', sql: 'BLOB' },
@@ -72,142 +76,11 @@ export class DsSqliteStandards extends SqlStandards {
 
     return `CREATE TABLE IF NOT EXISTS ${tableName} (${columns})`;
   }
-
-  public isGood(term: string): string {
-    if (this._reservedKeywords().includes(term.toUpperCase())) {
-      throw new Error(
-        `The term "${term}" is a reserved keyword and cannot be used.`,
-      );
-    }
-    return term;
+  public get tableExists() {
+    return `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`;
   }
 
-  private _reservedKeywords(): string[] {
-    return [
-      'ABORT',
-      'ACTION',
-      'ADD',
-      'AFTER',
-      'ALL',
-      'ALTER',
-      'ANALYZE',
-      'AND',
-      'AS',
-      'ASC',
-      'ATTACH',
-      'AUTOINCREMENT',
-      'BEFORE',
-      'BEGIN',
-      'BETWEEN',
-      'BY',
-      'CASCADE',
-      'CASE',
-      'CAST',
-      'CHECK',
-      'COLLATE',
-      'COLUMN',
-      'COMMIT',
-      'CONFLICT',
-      'CONSTRAINT',
-      'CREATE',
-      'CROSS',
-      'CURRENT_DATE',
-      'CURRENT_TIME',
-      'CURRENT_TIMESTAMP',
-      'DATABASE',
-      'DEFAULT',
-      'DEFERRABLE',
-      'DEFERRED',
-      'DELETE',
-      'DESC',
-      'DETACH',
-      'DISTINCT',
-      'DROP',
-      'EACH',
-      'ELSE',
-      'END',
-      'ESCAPE',
-      'EXCEPT',
-      'EXCLUSIVE',
-      'EXISTS',
-      'EXPLAIN',
-      'FAIL',
-      'FOR',
-      'FOREIGN',
-      'FROM',
-      'FULL',
-      'GLOB',
-      'GROUP',
-      'HAVING',
-      'IF',
-      'IGNORE',
-      'IMMEDIATE',
-      'IN',
-      'INDEX',
-      'INDEXED',
-      'INITIALLY',
-      'INNER',
-      'INSERT',
-      'INSTEAD',
-      'INTERSECT',
-      'INTO',
-      'IS',
-      'ISNULL',
-      'JOIN',
-      'KEY',
-      'LEFT',
-      'LIKE',
-      'LIMIT',
-      'MATCH',
-      'NATURAL',
-      'NO',
-      'NOT',
-      'NOTNULL',
-      'NULL',
-      'OF',
-      'OFFSET',
-      'ON',
-      'OR',
-      'ORDER',
-      'OUTER',
-      'PLAN',
-      'PRAGMA',
-      'PRIMARY',
-      'QUERY',
-      'RAISE',
-      'RECURSIVE',
-      'REFERENCES',
-      'REGEXP',
-      'REINDEX',
-      'RELEASE',
-      'RENAME',
-      'REPLACE',
-      'RESTRICT',
-      'RIGHT',
-      'ROLLBACK',
-      'ROW',
-      'SAVEPOINT',
-      'SELECT',
-      'SET',
-      'TABLE',
-      'TEMP',
-      'TEMPORARY',
-      'THEN',
-      'TO',
-      'TRANSACTION',
-      'TRIGGER',
-      'UNION',
-      'UNIQUE',
-      'UPDATE',
-      'USING',
-      'VACUUM',
-      'VALUES',
-      'VIEW',
-      'VIRTUAL',
-      'WHEN',
-      'WHERE',
-      'WITH',
-      'WITHOUT',
-    ];
+  public get tableType() {
+    return `SELECT type${this.postFix} AS type FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ? AND version${this.postFix} = (SELECT MAX(version${this.postFix}) FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ?)`;
   }
 }

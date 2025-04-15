@@ -50,7 +50,7 @@ describe('create table', () => {
       type: 'cakes',
       version: 1,
     };
-    await testDB.createTable2({ tableCfg });
+    await testDB.createTable({ tableCfg });
 
     await testDB.deleteDatabase();
   });

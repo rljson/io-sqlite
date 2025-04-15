@@ -10,13 +10,27 @@ import { refName } from './constants.ts';
 
 export abstract class SqlStandards {
   /// simple  keywords and statements*******************
-  mainTable: string = 'current_articles';
   mainColumn: string = 'articleType';
   connectingColumn: string = '_hash';
   referenceIndicator: string = 'Ref';
   mainConnectingColumn: string = this.connectingColumn; //only to stay on the safe side
   tempSuffix: string = '_temp';
   queryIntro: string = 'SELECT DISTINCT';
+
+  /// Postfix handling for the database
+  public postFix: string = '_px';
+  public mainTable: string = 'tableCfgs';
+
+  // add postfix to a name in order to avoid name conflicts
+  public addFix(name: string): string {
+    return name === this.connectingColumn ? name : name + this.postFix;
+  }
+  // remove postfix from a name in order to communicate with the outside world
+  public remFix(name: string): string {
+    return name.endsWith(this.postFix)
+      ? name.slice(0, -this.postFix.length)
+      : name;
+  }
 
   /// Parameterized queries*******************************
 
@@ -70,9 +84,9 @@ export abstract class SqlStandards {
   abstract tableNames: string;
 
   abstract foreignKeyList(tableName: string): string;
-  abstract allColumnNames(tableName: string): string;
-  abstract get allTableNames(): string;
+  abstract columnNames(tableName: string): string;
   abstract tableReferences(referenceArray: string[]): string;
+  abstract get tableExists(): string;
 
   /// Actions on tables
 
@@ -100,7 +114,7 @@ export abstract class SqlStandards {
     return `DROP TABLE IF EXISTS ${tableName}${this.tempSuffix}`;
   }
 
-  public refillTable(tableName: string, commonColumns: string[]) {
+  public fillTable(tableName: string, commonColumns: string[]) {
     // select only those columns that are in both tables
     const columns = commonColumns.join(', ');
     return `INSERT INTO ${tableName} (${columns}) SELECT ${columns} FROM ${tableName}${this.tempSuffix}`;
@@ -114,6 +128,10 @@ export abstract class SqlStandards {
     return `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`;
   }
 
+  public selection(tableName: string, columns: string, whereClause: string) {
+    return `SELECT ${columns} FROM ${tableName} WHERE ${whereClause}`;
+  }
+
   public articleSetsRefs(winNumber: string) {
     return `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '${winNumber}'`;
   }
@@ -123,19 +141,38 @@ export abstract class SqlStandards {
   }
 
   public currentCount(tableName: string) {
-    return `SELECT COUNT(*) FROM ${tableName}`;
+    const fixedTableName = tableName.endsWith(this.postFix)
+      ? tableName
+      : this.addFix(tableName);
+    return `SELECT COUNT(*) FROM ${fixedTableName}`;
   }
 
   public get createMainTable() {
-    return 'CREATE TABLE IF NOT EXISTS tableCfgs (_hash TEXT PRIMARY KEY, version INTEGER, key TEXT KEY, type TEXT, tableCfg TEXT, previous TEXT);';
+    return `CREATE TABLE IF NOT EXISTS tableCfgs${this.postFix} (_hash TEXT PRIMARY KEY, version${this.postFix} INTEGER, key${this.postFix} TEXT KEY, type${this.postFix} TEXT, tableCfg${this.postFix} TEXT, previous${this.postFix} TEXT);`;
   }
 
   public get currentTableCfgs() {
-    return `SELECT * FROM tableCfgs t1
-      WHERE version = (
-        SELECT MAX(version)
-        FROM tableCfgs t2
-        WHERE t1.key = t2.key AND t1.type = t2.type
+    return `SELECT _hash, version${this.postFix} AS version, key${this.postFix} AS key, type${this.postFix} AS type, tableCfg${this.postFix} AS tableCfg, previous${this.postFix} AS previous
+     FROM tableCfgs${this.postFix} t1
+      WHERE version${this.postFix} = (
+        SELECT MAX(version${this.postFix})
+        FROM tableCfgs${this.postFix} t2
+        WHERE t1.key${this.postFix} = t2.key${this.postFix} AND t1.type${this.postFix} = t2.type${this.postFix}
       )`;
+  }
+
+  public get currentTableCfg() {
+    return `SELECT _hash, version${this.postFix} AS version, key${this.postFix} AS key, type${this.postFix} AS type, tableCfg${this.postFix} AS tableCfg, previous${this.postFix} AS previous
+     FROM tableCfgs${this.postFix} t1
+      WHERE version${this.postFix} = (
+        SELECT MAX(version${this.postFix})
+        FROM tableCfgs${this.postFix} t2
+        WHERE t1.key${this.postFix} = t2.key${this.postFix} AND t1.type${this.postFix} = t2.type${this.postFix}
+        AND t1.key${this.postFix} = ?
+      )`;
+  }
+
+  public get tableTypeCheck() {
+    return `SELECT type${this.postFix} FROM tableCfgs${this.postFix} WHERE key${this.postFix} = ?`;
   }
 }
