@@ -7,35 +7,37 @@
 
 import { refName } from './constants.ts';
 
-
 export abstract class SqlStandards {
   /// simple  keywords and statements*******************
-  mainColumn: string = 'articleType';
-  connectingColumn: string = '_hash';
-  referenceIndicator: string = 'Ref';
-  mainConnectingColumn: string = this.connectingColumn; //only to stay on the safe side
-  tempSuffix: string = '_temp';
-  queryIntro: string = 'SELECT DISTINCT';
+  static mainColumn: string = 'articleType';
+  static connectingColumn: string = '_hash';
+  static referenceIndicator: string = 'Ref';
+  static mainConnectingColumn: string = SqlStandards.connectingColumn; //only to stay on the safe side
+  static tempSuffix: string = '_temp';
+  static queryIntro: string = 'SELECT DISTINCT';
 
   /// Postfix handling for the database
-  public postFix: string = '_px';
-  public mainTable: string = 'tableCfgs';
+  static postFix: string = '_px';
+  static mainTable: string = 'tableCfgs';
+  static revisionsTable: string = 'revisions';
 
   // add postfix to a name in order to avoid name conflicts
-  public addFix(name: string): string {
-    return name === this.connectingColumn ? name : name + this.postFix;
+  static addFix(name: string): string {
+    return name === SqlStandards.connectingColumn
+      ? name
+      : name + SqlStandards.postFix;
   }
   // remove postfix from a name in order to communicate with the outside world
-  public remFix(name: string): string {
-    return name.endsWith(this.postFix)
-      ? name.slice(0, -this.postFix.length)
+  static remFix(name: string): string {
+    return name.endsWith(SqlStandards.postFix)
+      ? name.slice(0, -SqlStandards.postFix.length)
       : name;
   }
 
   /// Parameterized queries*******************************
 
   public centralSource(winNumber: string) {
-    return `(${this.queryIntro} winNumber, ${this.mainColumn} FROM ${this.mainTable} WHERE winNumber = '${winNumber}')`;
+    return `(${SqlStandards.queryIntro} winNumber, ${SqlStandards.mainColumn} FROM ${SqlStandards.mainTable} WHERE winNumber = '${winNumber}')`;
   }
 
   public joinExpression(tableName: string, alias: string) {
@@ -43,8 +45,8 @@ export abstract class SqlStandards {
   }
 
   public layerSource(winNumber: string, tableName: string) {
-    return `(${this.queryIntro} ${this.mainColumn},\n ${this.mainConnectingColumn}
-              FROM ${this.mainTable}\n WHERE winNumber = '${winNumber}'
+    return `(${SqlStandards.queryIntro} ${SqlStandards.mainColumn},\n ${SqlStandards.mainConnectingColumn}
+              FROM ${SqlStandards.mainTable}\n WHERE winNumber = '${winNumber}'
               AND layer = '${tableName}')`;
   }
 
@@ -72,7 +74,7 @@ export abstract class SqlStandards {
       .map(
         (col: string | any[]) =>
           `FOREIGN KEY (${col}) REFERENCES ${col.slice(0, -refName.length)}(${
-            this.connectingColumn
+            SqlStandards.connectingColumn
           })`,
       )
       .join(', ')
@@ -91,7 +93,7 @@ export abstract class SqlStandards {
   /// Actions on tables
 
   public createBasicTable(tableName: string) {
-    return `CREATE TABLE IF NOT EXISTS ${tableName} (${this.connectingColumn} TEXT PRIMARY KEY NOT NULL)`;
+    return `CREATE TABLE IF NOT EXISTS ${tableName} (${SqlStandards.connectingColumn} TEXT PRIMARY KEY NOT NULL)`;
   }
 
   public createFullTable(
@@ -107,17 +109,17 @@ export abstract class SqlStandards {
   }
 
   public createTempTable(tableName: string) {
-    return `CREATE TABLE ${tableName}${this.tempSuffix} AS SELECT * FROM ${tableName}`;
+    return `CREATE TABLE ${tableName}${SqlStandards.tempSuffix} AS SELECT * FROM ${tableName}`;
   }
 
   public dropTempTable(tableName: string) {
-    return `DROP TABLE IF EXISTS ${tableName}${this.tempSuffix}`;
+    return `DROP TABLE IF EXISTS ${tableName}${SqlStandards.tempSuffix}`;
   }
 
   public fillTable(tableName: string, commonColumns: string[]) {
     // select only those columns that are in both tables
     const columns = commonColumns.join(', ');
-    return `INSERT INTO ${tableName} (${columns}) SELECT ${columns} FROM ${tableName}${this.tempSuffix}`;
+    return `INSERT INTO ${tableName} (${columns}) SELECT ${columns} FROM ${tableName}${SqlStandards.tempSuffix}`;
   }
 
   public deleteFromTable(tableName: string, winNumber: string) {
@@ -141,38 +143,38 @@ export abstract class SqlStandards {
   }
 
   public currentCount(tableName: string) {
-    const fixedTableName = tableName.endsWith(this.postFix)
+    const fixedTableName = tableName.endsWith(SqlStandards.postFix)
       ? tableName
-      : this.addFix(tableName);
+      : SqlStandards.addFix(tableName);
     return `SELECT COUNT(*) FROM ${fixedTableName}`;
   }
 
   public get createMainTable() {
-    return `CREATE TABLE IF NOT EXISTS tableCfgs${this.postFix} (_hash TEXT PRIMARY KEY, version${this.postFix} INTEGER, key${this.postFix} TEXT KEY, type${this.postFix} TEXT, tableCfg${this.postFix} TEXT, previous${this.postFix} TEXT);`;
+    return `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.postFix} (_hash TEXT PRIMARY KEY, version${SqlStandards.postFix} INTEGER, key${SqlStandards.postFix} TEXT KEY, type${SqlStandards.postFix} TEXT, tableCfg${SqlStandards.postFix} TEXT, previous${SqlStandards.postFix} TEXT);`;
   }
 
   public get currentTableCfgs() {
-    return `SELECT _hash, version${this.postFix} AS version, key${this.postFix} AS key, type${this.postFix} AS type, tableCfg${this.postFix} AS tableCfg, previous${this.postFix} AS previous
-     FROM tableCfgs${this.postFix} t1
-      WHERE version${this.postFix} = (
-        SELECT MAX(version${this.postFix})
-        FROM tableCfgs${this.postFix} t2
-        WHERE t1.key${this.postFix} = t2.key${this.postFix} AND t1.type${this.postFix} = t2.type${this.postFix}
+    return `SELECT _hash, version${SqlStandards.postFix} AS version, key${SqlStandards.postFix} AS key, type${SqlStandards.postFix} AS type, tableCfg${SqlStandards.postFix} AS tableCfg, previous${SqlStandards.postFix} AS previous
+     FROM tableCfgs${SqlStandards.postFix} t1
+      WHERE version${SqlStandards.postFix} = (
+        SELECT MAX(version${SqlStandards.postFix})
+        FROM tableCfgs${SqlStandards.postFix} t2
+        WHERE t1.key${SqlStandards.postFix} = t2.key${SqlStandards.postFix} AND t1.type${SqlStandards.postFix} = t2.type${SqlStandards.postFix}
       )`;
   }
 
   public get currentTableCfg() {
-    return `SELECT _hash, version${this.postFix} AS version, key${this.postFix} AS key, type${this.postFix} AS type, tableCfg${this.postFix} AS tableCfg, previous${this.postFix} AS previous
-     FROM tableCfgs${this.postFix} t1
-      WHERE version${this.postFix} = (
-        SELECT MAX(version${this.postFix})
-        FROM tableCfgs${this.postFix} t2
-        WHERE t1.key${this.postFix} = t2.key${this.postFix} AND t1.type${this.postFix} = t2.type${this.postFix}
-        AND t1.key${this.postFix} = ?
+    return `SELECT _hash, version${SqlStandards.postFix} AS version, key${SqlStandards.postFix} AS key, type${SqlStandards.postFix} AS type, tableCfg${SqlStandards.postFix} AS tableCfg, previous${SqlStandards.postFix} AS previous
+     FROM tableCfgs${SqlStandards.postFix} t1
+      WHERE version${SqlStandards.postFix} = (
+        SELECT MAX(version${SqlStandards.postFix})
+        FROM tableCfgs${SqlStandards.postFix} t2
+        WHERE t1.key${SqlStandards.postFix} = t2.key${SqlStandards.postFix} AND t1.type${SqlStandards.postFix} = t2.type${SqlStandards.postFix}
+        AND t1.key${SqlStandards.postFix} = ?
       )`;
   }
 
   public get tableTypeCheck() {
-    return `SELECT type${this.postFix} FROM tableCfgs${this.postFix} WHERE key${this.postFix} = ?`;
+    return `SELECT type${SqlStandards.postFix} FROM tableCfgs${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ?`;
   }
 }

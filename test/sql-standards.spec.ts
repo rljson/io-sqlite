@@ -17,7 +17,7 @@ import { SqlStandards } from '../src/sql-standards';
 
 class SqlStandardsImpl extends SqlStandards {
   public tableName = 'testTable';
-  public tableNameWithPostfix = 'testTable' + this.postFix;
+  public tableNameWithPostfix = 'testTable' + SqlStandards.postFix;
   tableNames = 'testTables';
 
   columnNames(tableName: string): string {
@@ -43,8 +43,8 @@ class SqlStandardsImpl extends SqlStandards {
         (col) =>
           `FOREIGN KEY (${col}) REFERENCES ${col.slice(
             0,
-            -this.referenceIndicator.length,
-          )} (${this.connectingColumn})`,
+            -SqlStandards.referenceIndicator.length,
+          )} (${SqlStandards.connectingColumn})`,
       )
       .join(', ');
   }
@@ -178,7 +178,7 @@ suite('SqlStandards', () => {
   });
 
   test('currentCount generates correct query', () => {
-    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${sqlStandards.postFix}`;
+    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${SqlStandards.postFix}`;
     expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
       expectedQuery,
     );

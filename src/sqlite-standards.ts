@@ -7,7 +7,6 @@
 
 import { SqlStandards } from './sql-standards.ts';
 
-
 export class DsSqliteStandards extends SqlStandards {
   tableReferences(referenceArray: string[]): string {
     return referenceArray
@@ -15,8 +14,8 @@ export class DsSqliteStandards extends SqlStandards {
         (col) =>
           `FOREIGN KEY (${col}) REFERENCES ${col.slice(
             0,
-            -this.referenceIndicator.length,
-          )} (${this.connectingColumn})`,
+            -SqlStandards.referenceIndicator.length,
+          )} (${SqlStandards.connectingColumn})`,
       )
       .join(', ');
   }
@@ -45,11 +44,11 @@ export class DsSqliteStandards extends SqlStandards {
   }
 
   public get tableCfg() {
-    return `SELECT * FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ? AND type${this.postFix} = ? AND version${this.postFix} = ?`;
+    return `SELECT * FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ? AND type${SqlStandards.postFix} = ? AND version${SqlStandards.postFix} = ?`;
   }
 
   public get insertTableCfg() {
-    return `INSERT INTO ${this.mainTable}${this.postFix} ( _hash, version${this.postFix}, key${this.postFix}, type${this.postFix}, tableCfg${this.postFix}) VALUES (?, ?, ?, ?, ?)`;
+    return `INSERT INTO ${SqlStandards.mainTable}${SqlStandards.postFix} ( _hash, version${SqlStandards.postFix}, key${SqlStandards.postFix}, type${SqlStandards.postFix}, tableCfg${SqlStandards.postFix}) VALUES (?, ?, ?, ?, ?)`;
   }
 
   ///Equivalent data types
@@ -81,6 +80,6 @@ export class DsSqliteStandards extends SqlStandards {
   }
 
   public get tableType() {
-    return `SELECT type${this.postFix} AS type FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ? AND version${this.postFix} = (SELECT MAX(version${this.postFix}) FROM ${this.mainTable}${this.postFix} WHERE key${this.postFix} = ?)`;
+    return `SELECT type${SqlStandards.postFix} AS type FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ? AND version${SqlStandards.postFix} = (SELECT MAX(version${SqlStandards.postFix}) FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ?)`;
   }
 }
