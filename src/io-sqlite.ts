@@ -8,13 +8,7 @@ import { hip, hsh } from '@rljson/hash';
 import { Io } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { JsonValue } from '@rljson/json';
-import {
-  ContentType,
-  iterateTables,
-  Rljson,
-  TableCfg,
-  TableType,
-} from '@rljson/rljson';
+import { ContentType, iterateTables, Rljson, TableCfg, TableType } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
@@ -25,6 +19,7 @@ import { join } from 'path';
 import { IoInit } from './io-sqlite-init.ts';
 import { SqlStandards } from './sql-standards.ts';
 import { DsSqliteStandards } from './sqlite-standards.ts';
+
 
 type DBType = Database.Database;
 const _sql = new DsSqliteStandards();
@@ -107,10 +102,6 @@ export class IoSqlite implements Io {
   // ...........................................................................
   // Rows
 
-  readRow(request: { table: string; rowHash: string }): Promise<Rljson> {
-    return this._readRow(request);
-  }
-
   readRows(request: {
     table: string;
     where: { [column: string]: JsonValue };
@@ -121,21 +112,22 @@ export class IoSqlite implements Io {
   async tableCfgs(): Promise<Rljson> {
     const result: Rljson = {};
     const returnValue = this._db.prepare(_sql.currentTableCfgs).all();
-    result.tableCfgs = JSON.parse(JSON.stringify(returnValue));
+    const data = JSON.parse(JSON.stringify(returnValue)) as TableCfg[];
+    const ownCfg = data.find((cfg) => cfg.key === 'tableCfgs') as TableCfg;
+
+    result.tableCfgs = {
+      _data: data,
+      _type: 'ingredients',
+      _tableCfg: ownCfg._hash as string,
+    };
     return result;
   }
 
   private async _tableCfg(tableName: string): Promise<TableCfg> {
-    let returnValue: any;
-    let returnCfg: TableCfg;
-    try {
-      returnValue = this._db
-        .prepare(_sql.currentTableCfg)
-        .get(SqlStandards.removeTablePostFix(tableName));
-      returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
-    } catch (error) {
-      throw error;
-    }
+    const returnValue = this._db
+      .prepare(_sql.currentTableCfg)
+      .get(SqlStandards.removeTablePostFix(tableName)) as any;
+    const returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
 
     return returnCfg;
   }
@@ -163,11 +155,6 @@ export class IoSqlite implements Io {
 
   createTable(request: { tableCfg: TableCfg }): Promise<void> {
     return this._createTable(request);
-  }
-
-  async tables(): Promise<Rljson> {
-    const result: Rljson = {};
-    return result;
   }
 
   // ######################
@@ -208,27 +195,20 @@ export class IoSqlite implements Io {
     const tableCfgHashed = hsh(tableCfg);
 
     //create main table if it does not exist yet
-    try {
-      this._db.prepare(_sql.createMainTable).run();
-    } catch (error) {
-      throw new Error('IoSqlite: Error creating main table: ' + error);
-    }
+    this._db.prepare(_sql.createMainTable).run();
 
     // Write tableCfg as first row into tableCfgs tableso
     // As this is the first row to be entered, it is entered manually
-    try {
-      this._db
-        .prepare(_sql.insertTableCfg)
-        .run(
-          tableCfgHashed._hash,
-          tableCfg.version,
-          tableCfg.key,
-          tableCfg.type,
-          JSON.stringify(tableCfg),
-        );
-    } catch (error) {
-      throw new Error('IoSqlite: Error while inserting table config: ' + error);
-    }
+
+    this._db
+      .prepare(_sql.insertTableCfg)
+      .run(
+        tableCfgHashed._hash,
+        tableCfg.version,
+        tableCfg.key,
+        tableCfg.type,
+        JSON.stringify(tableCfg),
+      );
   };
 
   // ...........................................................................
@@ -269,11 +249,9 @@ export class IoSqlite implements Io {
       const sqliteType = _sql.dataType(column.type);
       if (sqliteType) {
         return `${SqlStandards.addColumnPostFix(key)} ${sqliteType}`;
+      } else {
+        throw Error('Unsupported column type ' + column.type);
       }
-      console.warn(
-        `Skipping column ${column.key} with unsupported type ${column.type}`,
-      );
-      return [];
     });
 
     const columnsString = columns.join(', ');

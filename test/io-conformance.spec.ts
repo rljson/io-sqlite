@@ -5,13 +5,14 @@
 // found in the LICENSE file in the root of this package.
 
 import { hip, rmhsh } from '@rljson/hash';
-import { exampleTableCfg, Rljson, TableCfg, TableType } from '@rljson/rljson';
+import { exampleTableCfg, IngredientsTable, Rljson, TableCfg, TableType } from '@rljson/rljson';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
+
 
 describe('Io Conformance', async () => {
   let io: IoSqlite;
@@ -86,17 +87,18 @@ describe('Io Conformance', async () => {
       await io.createTable({ tableCfg: table1V2 });
 
       // Check the tableCfgs
-      const actualTableCfgs = await io.tableCfgs();
+      const actualTableCfgs = (await io.tableCfgs()).tableCfgs
+        ._data as unknown as TableCfg[];
 
-      expect(actualTableCfgs.tableCfgs.length).toBe(4);
-      expect((actualTableCfgs.tableCfgs[0] as TableCfg).key).toBe('tableCfgs');
-      expect((actualTableCfgs.tableCfgs[0] as TableCfg).version).toBe(1);
-      expect((actualTableCfgs.tableCfgs[1] as TableCfg).key).toBe('revisions');
-      expect((actualTableCfgs.tableCfgs[1] as TableCfg).version).toBe(1);
-      expect((actualTableCfgs.tableCfgs[2] as TableCfg).key).toBe('table0');
-      expect((actualTableCfgs.tableCfgs[2] as TableCfg).version).toBe(2);
-      expect((actualTableCfgs.tableCfgs[3] as TableCfg).key).toBe('table1');
-      expect((actualTableCfgs.tableCfgs[3] as TableCfg).version).toBe(2);
+      expect(actualTableCfgs.length).toBe(4);
+      expect((actualTableCfgs[0] as TableCfg).key).toBe('tableCfgs');
+      expect((actualTableCfgs[0] as TableCfg).version).toBe(1);
+      expect((actualTableCfgs[1] as TableCfg).key).toBe('revisions');
+      expect((actualTableCfgs[1] as TableCfg).version).toBe(1);
+      expect((actualTableCfgs[2] as TableCfg).key).toBe('table0');
+      expect((actualTableCfgs[2] as TableCfg).version).toBe(2);
+      expect((actualTableCfgs[3] as TableCfg).key).toBe('table1');
+      expect((actualTableCfgs[3] as TableCfg).version).toBe(2);
     });
   });
 
@@ -122,6 +124,74 @@ describe('Io Conformance', async () => {
         'Hash "wrongHash" does not match the newly calculated one "MkmRHAH1WplV0OSRcGaN7s". ' +
           'Please make sure that all systems are producing the same hashes.',
       );
+    });
+  });
+
+  describe('createTable(request)', () => {
+    it('should add a table and a table config', async () => {
+      const tablesFromConfig = async () => {
+        const tables = (await io.tableCfgs())
+          .tableCfgs as IngredientsTable<TableCfg>;
+
+        return tables._data.map((e) => e.key);
+      };
+
+      const physicalTables = async () => await io.allTableNames();
+
+      // Create a first table
+      await createExampleTable('table1');
+
+      expect(await tablesFromConfig()).toEqual([
+        'tableCfgs',
+        'revisions',
+        'table1',
+      ]);
+      expect(await physicalTables()).toEqual([
+        'tableCfgs',
+        'revisions',
+        'table1',
+      ]);
+
+      // Create a second table
+      await createExampleTable('table2');
+      expect(await tablesFromConfig()).toEqual([
+        'tableCfgs',
+        'revisions',
+        'table1',
+        'table2',
+      ]);
+      expect(await physicalTables()).toEqual([
+        'tableCfgs',
+        'revisions',
+        'table1',
+        'table2',
+      ]);
+    });
+
+    describe('throws', async () => {
+      it('if the table already exists', async () => {
+        await createExampleTable('table');
+        await expect(createExampleTable('table')).rejects.toThrow(
+          'Table table already exists',
+        );
+      });
+
+      it('if the hashes in the tableCfg are wrong', async () => {
+        const tableCfg: TableCfg = hip(exampleTableCfg({ key: 'table' }));
+        const rightHash = tableCfg._hash;
+        tableCfg._hash = 'wrongHash';
+        let message: string = '';
+        try {
+          await io.createTable({ tableCfg: tableCfg });
+        } catch (err: any) {
+          message = err.message;
+        }
+
+        expect(message).toBe(
+          `Hash "wrongHash" does not match the newly calculated one "${rightHash}". ` +
+            'Please make sure that all systems are producing the same hashes.',
+        );
+      });
     });
   });
 
