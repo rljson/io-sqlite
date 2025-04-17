@@ -8,7 +8,6 @@ import { expect, suite, test } from 'vitest';
 
 import { SqlStandards } from '../src/sql-standards';
 
-
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
 // und Softwareentwicklung mbH. All Rights Reserved.
@@ -18,6 +17,7 @@ import { SqlStandards } from '../src/sql-standards';
 
 class SqlStandardsImpl extends SqlStandards {
   public tableName = 'testTable';
+  public tableNameWithPostfix = 'testTable' + this.postFix;
   tableNames = 'testTables';
 
   columnNames(tableName: string): string {
@@ -179,6 +179,12 @@ suite('SqlStandards', () => {
 
   test('currentCount generates correct query', () => {
     const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${sqlStandards.postFix}`;
+    expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
+      expectedQuery,
+    );
+  });
+  test('currentCount generates correct query when table name is already fixed', () => {
+    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableNameWithPostfix}`;
     expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
       expectedQuery,
     );

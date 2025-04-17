@@ -363,16 +363,10 @@ export class IoSqlite implements Io {
       .all()
       .map(
         (row) =>
-          `${(row as { name: string }).name} AS ${_sql.remFix(
+          `${(row as { name: string }).name} AS [${_sql.remFix(
             (row as { name: string }).name,
-          )}`,
+          )}]`,
       ) as string[];
-
-    // test only
-    const randomNumber = Math.random().toString();
-    this._db
-      .prepare(`INSERT INTO revisions_px (_hash) VALUES (${randomNumber})`)
-      .run();
 
     const returnFile: Rljson = {};
     let returnData;

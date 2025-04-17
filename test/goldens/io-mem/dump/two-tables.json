@@ -37,6 +37,38 @@
         "previous": null
       },
       {
+        "_hash": "KK7MV6tta9SVVZx_GSP3Dg",
+        "version": 1,
+        "key": "revisions",
+        "type": "ingredients",
+        "tableCfg": {
+          "version": 1,
+          "key": "revisions",
+          "type": "ingredients",
+          "isHead": false,
+          "isRoot": false,
+          "isShared": true,
+          "columns": {
+            "table": {
+              "type": "string"
+            },
+            "predecessor": {
+              "type": "string"
+            },
+            "successor": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "number"
+            },
+            "id": {
+              "type": "string"
+            }
+          }
+        },
+        "previous": null
+      },
+      {
         "_hash": "MkmRHAH1WplV0OSRcGaN7s",
         "version": 1,
         "key": "table1",
@@ -83,6 +115,12 @@
         "previous": null
       }
     ],
+    "_type": "ingredients",
+    "_tableCfg": "aa",
+    "_hash": "aad"
+  },
+  "revisions": {
+    "_data": [],
     "_type": "ingredients",
     "_tableCfg": "aa",
     "_hash": "aad"
