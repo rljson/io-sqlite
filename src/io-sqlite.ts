@@ -247,28 +247,11 @@ export class IoSqlite implements Io {
     const columns = Object.keys(columnsCfg).flatMap((key) => {
       const column = columnsCfg[key];
       const sqliteType = _sql.dataType(column.type);
-      if (sqliteType) {
-        return `${SqlStandards.addColumnPostFix(key)} ${sqliteType}`;
-      } else {
-        throw Error('Unsupported column type ' + column.type);
-      }
+      return `${SqlStandards.addColumnPostFix(key)} ${sqliteType}`;
     });
 
     const columnsString = columns.join(', ');
     this._db.exec(_sql.createTable(tableName, columnsString));
-  }
-
-  // ...........................................................................
-  // private async _tables(): Promise<Rljson> {
-  //   throw new Error('Not implemented');
-  // }
-
-  // ...........................................................................
-  private async _readRow(request: {
-    table: string;
-    rowHash: string;
-  }): Promise<Rljson> {
-    throw new Error('Not implemented ' + request);
   }
 
   // ...........................................................................

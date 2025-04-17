@@ -192,6 +192,24 @@ describe('Io Conformance', async () => {
             'Please make sure that all systems are producing the same hashes.',
         );
       });
+
+      it('if a column has an unsupported type', async () => {
+        const tableCfg: TableCfg = exampleTableCfg({ key: 'table' });
+        const invalidTableCfg: TableCfg = {
+          ...tableCfg,
+          columns: {
+            ...tableCfg.columns,
+            unsupportedType: {
+              key: 'unsupportedType',
+              type: 'unsupported' as any,
+            },
+          },
+        };
+
+        await expect(
+          io.createTable({ tableCfg: invalidTableCfg }),
+        ).rejects.toThrow('Unknown data type: unsupported');
+      });
     });
   });
 
