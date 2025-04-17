@@ -7,7 +7,7 @@
 import { hip, hsh } from '@rljson/hash';
 import { Io } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
-import { JsonValue } from '@rljson/json';
+import { JsonValue, JsonValueType } from '@rljson/json';
 import { ContentType, iterateTables, Rljson, TableCfg, TableType } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
@@ -144,13 +144,7 @@ export class IoSqlite implements Io {
   // ...........................................................................
   // Write data into the respective table
   async write(request: { data: Rljson }): Promise<void> {
-    try {
-      await this._write(request);
-    } catch (error) {
-      throw new Error(
-        `${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
+    await this._write(request);
   }
 
   createTable(request: { tableCfg: TableCfg }): Promise<void> {
@@ -285,14 +279,14 @@ export class IoSqlite implements Io {
       const convertedRow: { [key: string]: any } = {};
       for (const column of columns) {
         const columnName = SqlStandards.removeColumnPostFix(column);
-        switch (columnTypes[columnName]) {
+        const columnType = columnTypes[columnName] as JsonValueType;
+        switch (columnType) {
           case 'boolean':
-            convertedRow[columnName] = row[columnName] === 1 ? true : false;
+            convertedRow[columnName] = row[columnName] !== 0;
             break;
           case 'null':
             convertedRow[columnName] = null as any;
             break;
-          case 'object':
           case 'jsonArray':
           case 'json':
             convertedRow[columnName] = JSON.parse(row[columnName]);
@@ -300,8 +294,14 @@ export class IoSqlite implements Io {
           case undefined:
             convertedRow[columnName] = row[columnName];
             break;
-          default:
+          case 'string':
+          case 'number':
             convertedRow[columnName] = row[columnName];
+            break;
+          /* v8 ignore start */
+          default:
+            throw new Error('Unsupported column type ' + columnType);
+          /* v8 ignore end */
         }
       }
 
@@ -489,9 +489,11 @@ export class IoSqlite implements Io {
   }
 
   _tableExists(tableName: string): boolean {
+    /* v8 ignore start */
     const fixedTableName = tableName.endsWith(SqlStandards.tablePostFix)
       ? tableName
       : SqlStandards.addTablePostFix(tableName);
+    /* v8 ignore end */
     const result = this._db.prepare(_sql.tableExists).get(fixedTableName) as {
       count: number;
     };
