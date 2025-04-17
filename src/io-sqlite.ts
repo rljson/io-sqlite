@@ -18,7 +18,7 @@ import {
 
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
-import { mkdtemp } from 'fs/promises';
+import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -30,8 +30,6 @@ type DBType = Database.Database;
 const _sql = new DsSqliteStandards();
 
 export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
-
-/* v8 ignore start */
 
 /**
  * Sqlite implementation of the Rljson Io interface.
@@ -48,7 +46,8 @@ export class IoSqlite implements Io {
     this._init();
   }
 
-  static exampleDbPath = async (dbDir: string | undefined = undefined) => {
+  // Returns an example database directory
+  static exampleDbDir = async (dbDir: string | undefined = undefined) => {
     // If dbDir is given, use it
     let newTempDir = '';
     if (dbDir) {
@@ -67,16 +66,24 @@ export class IoSqlite implements Io {
     return newTempDir;
   };
 
+  // Returns an example database file
+  static exampleDbFilePath = async (dbDir: string | undefined = undefined) => {
+    return join(await this.exampleDbDir(dbDir), 'example.sqlite');
+  };
+
+  /**
+   * Returns an example database
+   * @param dbDir - The directory to store the database file.
+   * If not provided, a temporary directory will be created.
+   */
   static example = async (dbDir: string | undefined = undefined) => {
-    // If dbDir is given, use it
-    const newTempDir = await this.exampleDbPath(dbDir);
-    console.log('New temp dir:', newTempDir);
-    const tmpDb = join(newTempDir, 'example.sqlite');
+    const tmpDb = await this.exampleDbFilePath(dbDir);
     return new IoSqlite(tmpDb);
   };
 
   async deleteDatabase() {
     this._db.close();
+    await rm(this._dbPath as string);
     delete this._dbPath;
   }
 
@@ -127,7 +134,6 @@ export class IoSqlite implements Io {
         .get(SqlStandards.removeTablePostFix(tableName));
       returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
     } catch (error) {
-      console.error(error);
       throw error;
     }
 
@@ -205,7 +211,7 @@ export class IoSqlite implements Io {
     try {
       this._db.prepare(_sql.createMainTable).run();
     } catch (error) {
-      console.error(error);
+      throw new Error('IoSqlite: Error creating main table: ' + error);
     }
 
     // Write tableCfg as first row into tableCfgs tableso
@@ -221,7 +227,7 @@ export class IoSqlite implements Io {
           JSON.stringify(tableCfg),
         );
     } catch (error) {
-      console.error(error);
+      throw new Error('IoSqlite: Error while inserting table config: ' + error);
     }
   };
 
@@ -242,21 +248,15 @@ export class IoSqlite implements Io {
       );
 
     if (!exists) {
-      // Insert tableCfg into tableCfgs
-      try {
-        this._db
-          .prepare(_sql.insertTableCfg)
-          .run(
-            tableCfgHashed._hash,
-            request.tableCfg.version,
-            request.tableCfg.key,
-            request.tableCfg.type,
-            JSON.stringify(request.tableCfg),
-          );
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
+      this._db
+        .prepare(_sql.insertTableCfg)
+        .run(
+          tableCfgHashed._hash,
+          request.tableCfg.version,
+          request.tableCfg.key,
+          request.tableCfg.type,
+          JSON.stringify(request.tableCfg),
+        );
     } else {
       throw new Error(`Table ${request.tableCfg.key} already exists`);
     }
@@ -277,11 +277,7 @@ export class IoSqlite implements Io {
     });
 
     const columnsString = columns.join(', ');
-    try {
-      this._db.exec(_sql.createTable(tableName, columnsString));
-    } catch (error) {
-      console.error(`Error creating table ${tableName}:`, error);
-    }
+    this._db.exec(_sql.createTable(tableName, columnsString));
   }
 
   // ...........................................................................
@@ -400,8 +396,7 @@ export class IoSqlite implements Io {
         .prepare(_sql.allData(fixedTableName, columnNames.join(', ')))
         .all();
     } catch (error) {
-      console.error(`Error dumping table ${request.table}:`, error);
-      throw new Error(`Failed to dump table ${request.table}`);
+      throw new Error(`Failed to dump table ${request.table} ` + error);
     }
 
     // get table's column structure
@@ -652,5 +647,3 @@ export class IoSqlite implements Io {
     return tableCfg.type;
   }
 }
-
-//* v8 ignore stop */
