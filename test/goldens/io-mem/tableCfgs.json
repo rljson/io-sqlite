@@ -67,72 +67,8 @@
           }
         },
         "previous": null
-      },
-      {
-        "_hash": "MkmRHAH1WplV0OSRcGaN7s",
-        "version": 1,
-        "key": "table1",
-        "type": "ingredients",
-        "tableCfg": {
-          "key": "table1",
-          "version": 1,
-          "columns": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "number"
-            }
-          },
-          "type": "ingredients",
-          "isHead": true,
-          "isRoot": true,
-          "isShared": false
-        },
-        "previous": null
-      },
-      {
-        "_hash": "ocqbQl2Njsfc4PMZXjqug9",
-        "version": 1,
-        "key": "table2",
-        "type": "ingredients",
-        "tableCfg": {
-          "key": "table2",
-          "version": 1,
-          "columns": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "number"
-            }
-          },
-          "type": "ingredients",
-          "isHead": true,
-          "isRoot": true,
-          "isShared": false
-        },
-        "previous": null
       }
     ],
-    "_type": "ingredients",
-    "_tableCfg": "aa",
-    "_hash": "aad"
-  },
-  "revisions": {
-    "_data": [],
-    "_type": "ingredients",
-    "_tableCfg": "aa",
-    "_hash": "aad"
-  },
-  "table1": {
-    "_data": [],
-    "_type": "ingredients",
-    "_tableCfg": "aa",
-    "_hash": "aad"
-  },
-  "table2": {
-    "_data": [],
     "_type": "ingredients",
     "_tableCfg": "aa",
     "_hash": "aad"

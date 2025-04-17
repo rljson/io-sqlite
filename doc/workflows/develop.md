@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `open sqlite db/insert table/write first row` here and below
+Replace `implement create table function` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "open sqlite db/insert table/write first row"
+node scripts/create-branch.js "implement create table function"
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"open sqlite db/insert table/write first row"
+git commit -am"implement create table function"
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "open sqlite db/insert table/write first row" --body " "
+gh pr create --base main --title "implement create table function" --body " "
 ```
 
 ## Code review
