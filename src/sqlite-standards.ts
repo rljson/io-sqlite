@@ -44,11 +44,11 @@ export class DsSqliteStandards extends SqlStandards {
   }
 
   public get tableCfg() {
-    return `SELECT * FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ? AND type${SqlStandards.postFix} = ? AND version${SqlStandards.postFix} = ?`;
+    return `SELECT * FROM ${SqlStandards.mainTable}${SqlStandards.tablePostFix} WHERE key${SqlStandards.columnPostFix} = ? AND type${SqlStandards.columnPostFix} = ? AND version${SqlStandards.columnPostFix} = ?`;
   }
 
   public get insertTableCfg() {
-    return `INSERT INTO ${SqlStandards.mainTable}${SqlStandards.postFix} ( _hash, version${SqlStandards.postFix}, key${SqlStandards.postFix}, type${SqlStandards.postFix}, tableCfg${SqlStandards.postFix}) VALUES (?, ?, ?, ?, ?)`;
+    return `INSERT INTO ${SqlStandards.mainTable}${SqlStandards.tablePostFix} ( _hash, version${SqlStandards.columnPostFix}, key${SqlStandards.columnPostFix}, type${SqlStandards.columnPostFix}, tableCfg${SqlStandards.columnPostFix}) VALUES (?, ?, ?, ?, ?)`;
   }
 
   ///Equivalent data types
@@ -80,6 +80,6 @@ export class DsSqliteStandards extends SqlStandards {
   }
 
   public get tableType() {
-    return `SELECT type${SqlStandards.postFix} AS type FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ? AND version${SqlStandards.postFix} = (SELECT MAX(version${SqlStandards.postFix}) FROM ${SqlStandards.mainTable}${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ?)`;
+    return `SELECT type${SqlStandards.columnPostFix} AS type FROM ${SqlStandards.mainTable}${SqlStandards.columnPostFix} WHERE key${SqlStandards.columnPostFix} = ? AND version${SqlStandards.columnPostFix} = (SELECT MAX(version${SqlStandards.columnPostFix}) FROM ${SqlStandards.mainTable}${SqlStandards.columnPostFix} WHERE key${SqlStandards.columnPostFix} = ?)`;
   }
 }

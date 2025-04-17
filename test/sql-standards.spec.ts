@@ -17,7 +17,7 @@ import { SqlStandards } from '../src/sql-standards';
 
 class SqlStandardsImpl extends SqlStandards {
   public tableName = 'testTable';
-  public tableNameWithPostfix = 'testTable' + SqlStandards.postFix;
+  public tableNameWithPostfix = 'testTable' + SqlStandards.tablePostFix;
   tableNames = 'testTables';
 
   columnNames(tableName: string): string {
@@ -100,8 +100,10 @@ suite('SqlStandards', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs_px (_hash TEXT PRIMARY KEY, version_px INTEGER, key_px TEXT KEY, type_px TEXT, tableCfg_px TEXT, previous_px TEXT);`;
-    expect(sqlStandards.createMainTable).toBe(expectedQuery);
+    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.tablePostFix} (_hash TEXT PRIMARY KEY, version${SqlStandards.columnPostFix} INTEGER, key${SqlStandards.columnPostFix} TEXT KEY, type${SqlStandards.columnPostFix} TEXT, tableCfg${SqlStandards.columnPostFix} TEXT, previous${SqlStandards.columnPostFix} TEXT);`;
+    expect(
+      sqlStandards.createMainTable.replaceAll('\n', '').replaceAll(/\s+/g, ' '),
+    ).toBe(expectedQuery);
   });
 
   test('createBasicTable generates correct query', () => {
@@ -178,14 +180,14 @@ suite('SqlStandards', () => {
   });
 
   test('currentCount generates correct query', () => {
-    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${SqlStandards.postFix}`;
+    const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableName}${SqlStandards.tablePostFix}`;
     expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
       expectedQuery,
     );
   });
   test('currentCount generates correct query when table name is already fixed', () => {
     const expectedQuery = `SELECT COUNT(*) FROM ${sqlStandards.tableNameWithPostfix}`;
-    expect(sqlStandards.currentCount(sqlStandards.tableName)).toBe(
+    expect(sqlStandards.currentCount(sqlStandards.tableNameWithPostfix)).toBe(
       expectedQuery,
     );
   });

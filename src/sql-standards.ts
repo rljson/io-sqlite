@@ -17,21 +17,35 @@ export abstract class SqlStandards {
   static queryIntro: string = 'SELECT DISTINCT';
 
   /// Postfix handling for the database
-  static postFix: string = '_px';
+  static columnPostFix: string = '_col';
+  static tablePostFix: string = '_tbl';
   static mainTable: string = 'tableCfgs';
   static revisionsTable: string = 'revisions';
 
-  // add postfix to a name in order to avoid name conflicts
-  static addFix(name: string): string {
-    return name === SqlStandards.connectingColumn
-      ? name
-      : name + SqlStandards.postFix;
+  static addColumnPostFix(name: string): string {
+    return this.addFix(name, SqlStandards.columnPostFix);
   }
+
+  static addTablePostFix(name: string): string {
+    return this.addFix(name, SqlStandards.tablePostFix);
+  }
+
+  // add postfix to a name in order to avoid name conflicts
+  static addFix(name: string, fix: string): string {
+    return name === SqlStandards.connectingColumn ? name : name + fix;
+  }
+
+  static removeTablePostFix(name: string): string {
+    return this.remFix(name, SqlStandards.tablePostFix);
+  }
+
+  static removeColumnPostFix(name: string): string {
+    return this.remFix(name, SqlStandards.columnPostFix);
+  }
+
   // remove postfix from a name in order to communicate with the outside world
-  static remFix(name: string): string {
-    return name.endsWith(SqlStandards.postFix)
-      ? name.slice(0, -SqlStandards.postFix.length)
-      : name;
+  static remFix(name: string, fix: string): string {
+    return name.endsWith(fix) ? name.slice(0, -fix.length) : name;
   }
 
   /// Parameterized queries*******************************
@@ -143,38 +157,39 @@ export abstract class SqlStandards {
   }
 
   public currentCount(tableName: string) {
-    const fixedTableName = tableName.endsWith(SqlStandards.postFix)
+    const fixedTableName = tableName.endsWith(SqlStandards.tablePostFix)
       ? tableName
-      : SqlStandards.addFix(tableName);
+      : SqlStandards.addTablePostFix(tableName);
     return `SELECT COUNT(*) FROM ${fixedTableName}`;
   }
 
   public get createMainTable() {
-    return `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.postFix} (_hash TEXT PRIMARY KEY, version${SqlStandards.postFix} INTEGER, key${SqlStandards.postFix} TEXT KEY, type${SqlStandards.postFix} TEXT, tableCfg${SqlStandards.postFix} TEXT, previous${SqlStandards.postFix} TEXT);`;
+    return `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.tablePostFix}
+      (_hash TEXT PRIMARY KEY, version${SqlStandards.columnPostFix} INTEGER, key${SqlStandards.columnPostFix} TEXT KEY, type${SqlStandards.columnPostFix} TEXT, tableCfg${SqlStandards.columnPostFix} TEXT, previous${SqlStandards.columnPostFix} TEXT);`;
   }
 
   public get currentTableCfgs() {
-    return `SELECT _hash, version${SqlStandards.postFix} AS version, key${SqlStandards.postFix} AS key, type${SqlStandards.postFix} AS type, tableCfg${SqlStandards.postFix} AS tableCfg, previous${SqlStandards.postFix} AS previous
-     FROM tableCfgs${SqlStandards.postFix} t1
-      WHERE version${SqlStandards.postFix} = (
-        SELECT MAX(version${SqlStandards.postFix})
-        FROM tableCfgs${SqlStandards.postFix} t2
-        WHERE t1.key${SqlStandards.postFix} = t2.key${SqlStandards.postFix} AND t1.type${SqlStandards.postFix} = t2.type${SqlStandards.postFix}
+    return `SELECT _hash, version${SqlStandards.columnPostFix} AS version, key${SqlStandards.columnPostFix} AS key, type${SqlStandards.columnPostFix} AS type, tableCfg${SqlStandards.columnPostFix} AS tableCfg, previous${SqlStandards.columnPostFix} AS previous
+     FROM tableCfgs${SqlStandards.tablePostFix} t1
+      WHERE version${SqlStandards.columnPostFix} = (
+        SELECT MAX(version${SqlStandards.columnPostFix})
+        FROM tableCfgs${SqlStandards.tablePostFix} t2
+        WHERE t1.key${SqlStandards.columnPostFix} = t2.key${SqlStandards.columnPostFix} AND t1.type${SqlStandards.columnPostFix} = t2.type${SqlStandards.columnPostFix}
       )`;
   }
 
   public get currentTableCfg() {
-    return `SELECT _hash, version${SqlStandards.postFix} AS version, key${SqlStandards.postFix} AS key, type${SqlStandards.postFix} AS type, tableCfg${SqlStandards.postFix} AS tableCfg, previous${SqlStandards.postFix} AS previous
-     FROM tableCfgs${SqlStandards.postFix} t1
-      WHERE version${SqlStandards.postFix} = (
-        SELECT MAX(version${SqlStandards.postFix})
-        FROM tableCfgs${SqlStandards.postFix} t2
-        WHERE t1.key${SqlStandards.postFix} = t2.key${SqlStandards.postFix} AND t1.type${SqlStandards.postFix} = t2.type${SqlStandards.postFix}
-        AND t1.key${SqlStandards.postFix} = ?
+    return `SELECT _hash, version${SqlStandards.columnPostFix} AS version, key${SqlStandards.columnPostFix} AS key, type${SqlStandards.columnPostFix} AS type, tableCfg${SqlStandards.columnPostFix} AS tableCfg, previous${SqlStandards.columnPostFix} AS previous
+     FROM tableCfgs${SqlStandards.tablePostFix} t1
+      WHERE version${SqlStandards.columnPostFix} = (
+        SELECT MAX(version${SqlStandards.columnPostFix})
+        FROM tableCfgs${SqlStandards.tablePostFix} t2
+        WHERE t1.key${SqlStandards.columnPostFix} = t2.key${SqlStandards.columnPostFix} AND t1.type${SqlStandards.columnPostFix} = t2.type${SqlStandards.columnPostFix}
+        AND t1.key${SqlStandards.columnPostFix} = ?
       )`;
   }
 
   public get tableTypeCheck() {
-    return `SELECT type${SqlStandards.postFix} FROM tableCfgs${SqlStandards.postFix} WHERE key${SqlStandards.postFix} = ?`;
+    return `SELECT type${SqlStandards.columnPostFix} FROM tableCfgs${SqlStandards.tablePostFix} WHERE key${SqlStandards.columnPostFix} = ?`;
   }
 }

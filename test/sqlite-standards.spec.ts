@@ -8,7 +8,6 @@ import { expect, suite, test } from 'vitest';
 
 import { DsSqliteStandards } from '../src/sqlite-standards';
 
-
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
 // und Softwareentwicklung mbH. All Rights Reserved.
@@ -51,5 +50,25 @@ suite('DsSqliteStandards', () => {
   test('allTableNames generates correct query', () => {
     const expectedQuery = `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
     expect(dsSqliteStandards.tableNames).toBe(expectedQuery);
+  });
+
+  test('tableType returns correct type', () => {
+    expect(dsSqliteStandards.tableType).toBe(
+      'SELECT type_col AS type FROM tableCfgs_col WHERE key_col = ? ' +
+        'AND version_col = (SELECT MAX(version_col) FROM tableCfgs_col WHERE key_col = ?)',
+    );
+  });
+
+  suite('dataType returns correct type', () => {
+    test('with known type', () => {
+      const expectedType = dsSqliteStandards.dataType('string');
+      expect(expectedType).toBe('TEXT');
+    });
+
+    test('with unknown type', () => {
+      expect(() => dsSqliteStandards.dataType('unknown')).throws(
+        'Unknown data type: unknown',
+      );
+    });
   });
 });
