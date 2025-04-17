@@ -8,13 +8,20 @@ import { hip, hsh } from '@rljson/hash';
 import { Io } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { JsonValue } from '@rljson/json';
-import { iterateTables, Rljson, TableCfg } from '@rljson/rljson';
+import {
+  ContentType,
+  iterateTables,
+  Rljson,
+  TableCfg,
+  TableType,
+} from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
 import { mkdtemp } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
+import { IoInit } from './io-sqlite-init.ts';
 import { DsSqliteStandards } from './sqlite-standards.ts';
 
 type DBType = Database.Database;
@@ -93,7 +100,9 @@ export class IoSqlite implements Io {
     let returnValue: any;
     let returnCfg: TableCfg;
     try {
-      returnValue = this._db.prepare(_sql.currentTableCfg).get(tableName);
+      returnValue = this._db
+        .prepare(_sql.currentTableCfg)
+        .get(_sql.remFix(tableName));
       returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
     } catch (error) {
       console.error(error);
@@ -138,12 +147,14 @@ export class IoSqlite implements Io {
   // ######################
 
   private _isReady = new IsReady();
+  private _ioInit!: IoInit;
 
   // ...........................................................................
   private async _init() {
     // Create tableCfgs table
-
+    this._ioInit = new IoInit(this);
     this._initTableCfgs();
+    await this._ioInit.initRevisionsTable();
     this._isReady.resolve();
   }
 
@@ -153,11 +164,14 @@ export class IoSqlite implements Io {
       version: 1,
       key: 'tableCfgs',
       type: 'ingredients',
+      isHead: true,
+      isRoot: true,
+      isShared: false,
       columns: {
-        version: { key: 'version', type: 'number', previous: 'number' },
-        key: { key: 'key', type: 'string', previous: 'string' },
-        type: { key: 'type', type: 'string', previous: 'string' },
-        tableCfg: { key: 'tableCfg', type: 'string', previous: 'string' },
+        version: { type: 'number' },
+        key: { type: 'string' },
+        type: { type: 'string' },
+        tableCfg: { type: 'json' },
       },
     };
 
@@ -172,7 +186,7 @@ export class IoSqlite implements Io {
       console.error(error);
     }
 
-    // Todo: Write tableCfg as first row into tableCfgs tables
+    // Write tableCfg as first row into tableCfgs tableso
     // As this is the first row to be entered, it is entered manually
     try {
       this._db
@@ -232,7 +246,7 @@ export class IoSqlite implements Io {
       const column = columnsCfg[key];
       const sqliteType = _sql.dataType(column.type);
       if (sqliteType) {
-        return `${_sql.addFix(column.key)} ${sqliteType}`;
+        return `${_sql.addFix(key)} ${sqliteType}`;
       }
       console.warn(
         `Skipping column ${column.key} with unsupported type ${column.type}`,
@@ -354,18 +368,52 @@ export class IoSqlite implements Io {
           )}`,
       ) as string[];
 
+    // test only
+    const randomNumber = Math.random().toString();
+    this._db
+      .prepare(`INSERT INTO revisions_px (_hash) VALUES (${randomNumber})`)
+      .run();
+
     const returnFile: Rljson = {};
-    let returnValue;
+    let returnData;
     try {
-      returnValue = this._db
+      returnData = this._db
         .prepare(_sql.allData(fixedTableName, columnNames.join(', ')))
         .all();
     } catch (error) {
       console.error(`Error dumping table ${request.table}:`, error);
       throw new Error(`Failed to dump table ${request.table}`);
     }
-    const defixedTableName = _sql.remFix(fixedTableName);
-    returnFile[defixedTableName] = JSON.parse(JSON.stringify(returnValue));
+
+    // get table's column structure
+    const columnTypes: { [key: string]: string } = await this._columnTypes(
+      request.table,
+    );
+    for (const column of Object.keys(columnTypes)) {
+      if (columnTypes[column] === 'json') {
+        for (const row of returnData) {
+          const typedRow: { [key: string]: any } = row as {
+            [key: string]: any;
+          };
+          if (typedRow[column] !== null) {
+            typedRow[column] = JSON.parse(
+              (row as { [key: string]: any })[column],
+            );
+          }
+        }
+      }
+    }
+
+    const tableCfgHash = 'aa';
+    const generalHash = 'aad';
+    const tableType = (await this._tableType(request.table)) as ContentType;
+    const table: TableType = {
+      _data: returnData as any,
+      _type: tableType,
+      _tableCfg: tableCfgHash,
+      _hash: generalHash,
+    };
+    returnFile[_sql.remFix(request.table)] = table;
 
     return returnFile;
   }
@@ -378,7 +426,7 @@ export class IoSqlite implements Io {
     let errorCount = 0;
 
     // Loop through the tables in the data
-    iterateTables(hashedData, async (tableName, tableData) => {
+    await iterateTables(hashedData, async (tableName, tableData) => {
       // Create internal table name
       const fixedTableName = _sql.addFix(tableName);
 
@@ -566,6 +614,10 @@ export class IoSqlite implements Io {
       columnTypes[key] = column.type;
     }
     return columnTypes;
+  }
+  async _tableType(tableName: string): Promise<string> {
+    const tableCfg = await this._tableCfg(_sql.remFix(tableName));
+    return tableCfg.type;
   }
 }
 

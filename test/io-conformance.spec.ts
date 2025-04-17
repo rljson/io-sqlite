@@ -5,7 +5,7 @@
 // found in the LICENSE file in the root of this package.
 
 import { hip, rmhsh } from '@rljson/hash';
-import { exampleTableCfg, Rljson, TableCfg } from '@rljson/rljson';
+import { exampleTableCfg, Rljson, TableCfg, TableType } from '@rljson/rljson';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -48,7 +48,7 @@ describe('Io Conformance', async () => {
   describe('allTableNames()', () => {
     it('should return an empty array if no tables are created', async () => {
       const tables = await io.allTableNames();
-      expect(tables).toEqual(['tableCfgs']);
+      expect(tables).toEqual(['tableCfgs', 'revisions']);
     });
 
     it('should return the names of all tables', async () => {
@@ -56,7 +56,7 @@ describe('Io Conformance', async () => {
       await createExampleTable('table2');
 
       const tables = await io.allTableNames();
-      expect(tables).toEqual(['tableCfgs', 'table1', 'table2']);
+      expect(tables).toEqual(['tableCfgs', 'revisions', 'table1', 'table2']);
     });
   });
 
@@ -66,6 +66,9 @@ describe('Io Conformance', async () => {
       const table0V1: TableCfg = {
         key: 'table0',
         type: 'ingredients',
+        isHead: false,
+        isRoot: false,
+        isShared: true,
         version: 1,
         columns: {
           col0: { key: 'col0', type: 'string' },
@@ -85,13 +88,15 @@ describe('Io Conformance', async () => {
       // Check the tableCfgs
       const actualTableCfgs = await io.tableCfgs();
 
-      expect(actualTableCfgs.tableCfgs.length).toBe(3);
+      expect(actualTableCfgs.tableCfgs.length).toBe(4);
       expect((actualTableCfgs.tableCfgs[0] as TableCfg).key).toBe('tableCfgs');
       expect((actualTableCfgs.tableCfgs[0] as TableCfg).version).toBe(1);
-      expect((actualTableCfgs.tableCfgs[1] as TableCfg).key).toBe('table0');
-      expect((actualTableCfgs.tableCfgs[1] as TableCfg).version).toBe(2);
-      expect((actualTableCfgs.tableCfgs[2] as TableCfg).key).toBe('table1');
+      expect((actualTableCfgs.tableCfgs[1] as TableCfg).key).toBe('revisions');
+      expect((actualTableCfgs.tableCfgs[1] as TableCfg).version).toBe(1);
+      expect((actualTableCfgs.tableCfgs[2] as TableCfg).key).toBe('table0');
       expect((actualTableCfgs.tableCfgs[2] as TableCfg).version).toBe(2);
+      expect((actualTableCfgs.tableCfgs[3] as TableCfg).key).toBe('table1');
+      expect((actualTableCfgs.tableCfgs[3] as TableCfg).version).toBe(2);
     });
   });
 
@@ -114,7 +119,7 @@ describe('Io Conformance', async () => {
       }
 
       expect(message).toBe(
-        'Hash "wrongHash" does not match the newly calculated one "iV1stjZctS3roKFkGegzEG". ' +
+        'Hash "wrongHash" does not match the newly calculated one "MkmRHAH1WplV0OSRcGaN7s". ' +
           'Please make sure that all systems are producing the same hashes.',
       );
     });
@@ -151,7 +156,7 @@ describe('Io Conformance', async () => {
       expect(io._currentCount('tableA')).toEqual(1);
 
       const dump = await io.dump();
-      const items = dump.tableA;
+      const items = (dump.tableA as TableType)._data;
       expect(items).toEqual([
         {
           _hash: 'apLP3I2XLnVm13umIZdVhV',
@@ -172,7 +177,7 @@ describe('Io Conformance', async () => {
       });
 
       const dump2 = await io.dump();
-      const items2 = dump2.tableA;
+      const items2 = (dump2.tableA as TableType)._data;
       expect(items2).toEqual([
         {
           _hash: 'apLP3I2XLnVm13umIZdVhV',
@@ -279,8 +284,8 @@ describe('Io Conformance', async () => {
                 _data: [
                   {
                     keyB2: 'b2',
-                    itemIds: 'xyz',
-                    itemIdsTable: 'xyz',
+                    sliceIdsRow: 'xyz',
+                    sliceIdsTable: 'xyz',
                     itemIds2: 'xyz',
                     layersTable: 'xyz',
                     layers: {},

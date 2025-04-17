@@ -1,9 +1,14 @@
 {
-  "table1": [
-    {
-      "_hash": "coOa9IUeUZ7j2a7U-tReeu",
-      "a": "a2",
-      "b": null
-    }
-  ]
+  "table1": {
+    "_data": [
+      {
+        "_hash": "coOa9IUeUZ7j2a7U-tReeu",
+        "a": "a2",
+        "b": null
+      }
+    ],
+    "_type": "ingredients",
+    "_tableCfg": "aa",
+    "_hash": "aad"
+  }
 }

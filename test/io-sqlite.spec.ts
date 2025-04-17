@@ -37,6 +37,9 @@ describe('create table', () => {
     const testDB = await IoSqlite.example();
     const tableCfg: TableCfg = {
       key: 'table1',
+      isHead: false,
+      isRoot: false,
+      isShared: true,
       columns: {
         id: {
           key: 'id',
