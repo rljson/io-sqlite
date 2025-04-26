@@ -13,6 +13,7 @@ import {
   iterateTables,
   Rljson,
   TableCfg,
+  TableKey,
   TableType,
 } from '@rljson/rljson';
 
@@ -42,7 +43,10 @@ export class IoSqlite implements Io {
   constructor(public dbPath: string) {
     this._dbPath = dbPath;
     this._db = new Database(dbPath);
-    this._init();
+  }
+
+  async init(): Promise<void> {
+    await this._init();
   }
 
   // Returns an example database directory
@@ -113,10 +117,17 @@ export class IoSqlite implements Io {
   }
 
   async rowCount(table: string): Promise<number> {
+    await this._ioTools.throwWhenTableDoesNotExist(table);
+
     const result = this._db.prepare(_sql.currentCount(table)).get() as {
       'COUNT(*)': number;
     };
     return result['COUNT(*)'];
+  }
+
+  // ...........................................................................
+  async tableExists(tableKey: TableKey): Promise<boolean> {
+    return this._tableExists(tableKey);
   }
 
   // ...........................................................................
@@ -262,32 +273,20 @@ export class IoSqlite implements Io {
     table: string;
     where: { [column: string]: JsonValue };
   }): Promise<Rljson> {
+    await this._ioTools.throwWhenTableDoesNotExist(request.table);
+
     const tableKeyWithPostFix = SqlStandards.addTablePostFix(request.table);
     if (!this._tableExists(tableKeyWithPostFix)) {
-      throw new Error(`Table ${request.table} does not exist`);
+      throw new Error(`Table ${request.table} not found`);
     }
 
     const tableCfg = await this._tableCfg(request.table);
-    const columnKeys = tableCfg.columns.map((col) => col.key);
-    const columnKeysWithPostFix = columnKeys.map((col) =>
-      SqlStandards.addColumnPostFix(col),
-    );
-
-    const columnNamesSql = await this._returnColumns(
-      columnKeysWithPostFix,
-      columnKeys,
-    );
 
     const whereString = this._whereString(Object.entries(request.where));
-    const query = _sql.selection(
-      tableKeyWithPostFix,
-      columnNamesSql,
-      whereString,
-    );
+    const query = _sql.selection(tableKeyWithPostFix, '*', whereString);
     const returnValue = this._db.prepare(query).all() as {
       [key: string]: any;
     }[];
-
     const convertedResult = this._parseData(returnValue, tableCfg);
 
     const result: Rljson = {
@@ -299,6 +298,7 @@ export class IoSqlite implements Io {
     return result;
   }
 
+  // ...........................................................................
   private _serializeRow(
     rowAsJson: Json,
     tableCfg: TableCfg,
@@ -312,7 +312,7 @@ export class IoSqlite implements Io {
       const valueType = typeof value;
 
       // Stringify objects and arrays
-      if (valueType === 'object') {
+      if (value !== null && valueType === 'object') {
         value = JSON.stringify(value);
       }
 
@@ -340,6 +340,12 @@ export class IoSqlite implements Io {
         const keyWithPostFix = SqlStandards.addColumnPostFix(key);
         const type = columnTypes[colNum] as JsonValueType;
         const val = row[keyWithPostFix];
+
+        if (val === undefined) {
+          convertedRow[key] = null;
+          continue;
+        }
+
         switch (type) {
           case 'boolean':
             convertedRow[key] = val !== 0;
@@ -386,6 +392,8 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
+    await this._ioTools.throwWhenTableDoesNotExist(request.table);
+
     const tableKeyWithPostFix = request.table.endsWith(
       SqlStandards.tablePostFix,
     )
@@ -437,7 +445,6 @@ export class IoSqlite implements Io {
     // Loop through the tables in the data
     await iterateTables(hashedData, async (tableName, tableData) => {
       const tableCfg = await this._tableCfg(tableName);
-      const columnTypes = tableCfg.columns.map((col) => col.type);
 
       // Create internal table name
       const tableKeyWithPostFix = SqlStandards.addTablePostFix(tableName);
@@ -463,7 +470,7 @@ export class IoSqlite implements Io {
       for (const row of tableData._data) {
         // Prepare and run the SQL query
         // (each row might have a different number of columns)
-        const columnKeys = Object.keys(row);
+        const columnKeys = tableCfg.columns.map((col) => col.key);
         const columnKeysWithPostfix = columnKeys.map((column) =>
           SqlStandards.addColumnPostFix(column),
         );
@@ -473,11 +480,11 @@ export class IoSqlite implements Io {
         )}) VALUES (${placeholders})`;
 
         // Put values into the necessary format
-        const rowValues = this._valueList(columnKeys, columnTypes, row);
+        const serializedRow = this._serializeRow(row, tableCfg);
 
         // Run the query
         try {
-          this._db.prepare(query).run(rowValues);
+          this._db.prepare(query).run(serializedRow);
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
@@ -521,47 +528,6 @@ export class IoSqlite implements Io {
       .prepare(_sql.tableTypeCheck)
       .get(tableName) as Record<string, string>;
     return tableType === result[tableKey] ? true : false;
-  }
-
-  _valueList(columnKeys: string[], columnTypes: string[], row: any): any[] {
-    const valueList: any[] = [];
-
-    for (let i = 0; i < columnKeys.length; i++) {
-      const key = columnKeys[i];
-      const type = columnTypes[i];
-      const val = row[key];
-
-      switch (columnTypes[i]) {
-        case 'string':
-          valueList.push(val);
-          break;
-        case 'number':
-          valueList.push(Number(val));
-          break;
-        case 'boolean':
-          valueList.push(val ? 1 : 0);
-          break;
-        case 'object':
-          valueList.push(JSON.stringify(val));
-          break;
-        case 'null':
-          valueList.push(null);
-          break;
-        case 'jsonArray':
-          valueList.push(JSON.stringify(val));
-          break;
-        case 'json':
-          valueList.push(JSON.stringify(val));
-          break;
-        case undefined:
-          valueList.push(`${val}`);
-          break;
-        default:
-          throw new Error(`Unsupported column type ${type}`);
-      }
-    }
-
-    return valueList;
   }
 
   async _returnColumns(

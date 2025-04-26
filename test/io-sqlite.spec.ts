@@ -30,6 +30,8 @@ describe('IoSqlite', () => {
 
     // Create new database
     testDb = await IoSqlite.example('io-sqlite-test');
+    await testDb.init();
+    await testDb.isReady();
   });
 
   describe('deleteDatabase', () => {
@@ -68,6 +70,10 @@ describe('IoSqlite', () => {
         isRoot: false,
         isShared: true,
         columns: [
+          {
+            key: '_hash',
+            type: 'string',
+          },
           {
             key: 'id',
             type: 'number',

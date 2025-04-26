@@ -2,12 +2,13 @@
   "table1": {
     "_data": [
       {
+        "_hash": "coOa9IUeUZ7j2a7U-tReeu",
         "a": "a2",
-        "_hash": "coOa9IUeUZ7j2a7U-tReeu"
+        "b": null
       }
     ],
     "_type": "ingredients",
-    "_tableCfg": "V9NqVeFM0OLG4kObpo4JQQ",
-    "_hash": "uT8lSXJQ_kJfahxRI382ZO"
+    "_tableCfg": "aa",
+    "_hash": "aad"
   }
 }

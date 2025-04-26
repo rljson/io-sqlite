@@ -100,7 +100,7 @@ suite('SqlStandards', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs_tbl (_hash TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, version_col REAL, columns_col TEXT)`;
+    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs_tbl (_hash TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, version_col REAL, previous_col TEXT, columns_col TEXT)`;
     expect(
       sqlStandards.createTableCfgsTable
         .replaceAll('\n', '')

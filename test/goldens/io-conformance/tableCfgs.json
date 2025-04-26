@@ -59,15 +59,20 @@
         ]
       },
       {
-        "_hash": "lnThcPW1OGRqWsOI0yjLyD",
+        "_hash": "YwTNgldrrZ-EwDqU0NDEUt",
         "key": "revisions",
         "type": "ingredients",
         "isHead": true,
         "isRoot": true,
         "isShared": false,
         "version": 1,
-        "previous": "null",
+        "previous": null,
         "columns": [
+          {
+            "key": "_hash",
+            "type": "string",
+            "_hash": "df4oYftB-71Njv9FprRCeg"
+          },
           {
             "key": "table",
             "type": "string",

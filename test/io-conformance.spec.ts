@@ -16,7 +16,7 @@ import {
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { IoSqlite } from '../src/io-sqlite.ts';
+import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
 
@@ -29,8 +29,9 @@ export const runIoConformanceTests = (
 
     beforeEach(async () => {
       io = await createIo();
-      ioTools = new IoTools(io);
+      await io.init();
       await io.isReady();
+      ioTools = new IoTools(io);
     });
 
     describe('isReady()', () => {
@@ -67,6 +68,7 @@ export const runIoConformanceTests = (
           isShared: true,
           version: 1,
           columns: [
+            { key: '_hash', type: 'string' },
             { key: 'col0', type: 'string' },
             { key: 'col1', type: 'string' },
             { key: 'col2', type: 'string' },
@@ -109,9 +111,22 @@ export const runIoConformanceTests = (
         }
 
         expect(message).toBe(
-          'Hash "wrongHash" does not match the newly calculated one "V9NqVeFM0OLG4kObpo4JQQ". ' +
+          'Hash "wrongHash" does not match the newly calculated one "mFdDpiYMieGfvYkrz5R-Id". ' +
             'Please make sure that all systems are producing the same hashes.',
         );
+      });
+    });
+
+    describe('tableExists(tableKey)', () => {
+      it('returns true if the table exists', async () => {
+        await createExampleTable('table1');
+        const exists = await io.tableExists('table1');
+        expect(exists).toBe(true);
+      });
+
+      it('returns false if the table does not exist', async () => {
+        const exists = await io.tableExists('nonexistentTable');
+        expect(exists).toBe(false);
       });
     });
 
@@ -155,18 +170,20 @@ export const runIoConformanceTests = (
           await expect(
             io.createOrExtendTable({ tableCfg: update }),
           ).rejects.toThrow(
-            'Invalid update of table able "table": ' +
-              'Column "x" has an unsupported type "unknown"',
+            'Invalid table configuration: Column "x" of table "table" has an unsupported type "unknown"',
           );
         });
 
         it('when the update has deleted columns', async () => {
-          const update = { ...existing, columns: existing.columns.slice(0, 1) };
+          const update = {
+            ...existing,
+            columns: [existing.columns[0], existing.columns[1]],
+          };
           await expect(
             io.createOrExtendTable({ tableCfg: update }),
           ).rejects.toThrow(
             'Invalid update of table able "table": ' +
-              'Columns must not be deleted. Deleted columns: b}',
+              'Columns must not be deleted. Deleted columns: b',
           );
         });
 
@@ -174,8 +191,9 @@ export const runIoConformanceTests = (
           const update = {
             ...existing,
             columns: [
-              { ...existing.columns[0], key: 'b' },
-              { ...existing.columns[1], key: 'a' },
+              { ...existing.columns[0], key: '_hash' },
+              { ...existing.columns[1], key: 'b' },
+              { ...existing.columns[2], key: 'a' },
             ],
           };
           await expect(
@@ -190,8 +208,9 @@ export const runIoConformanceTests = (
           const update = {
             ...existing,
             columns: [
-              { ...existing.columns[0], type: 'boolean' },
-              { ...existing.columns[1], type: 'number' },
+              { ...existing.columns[0], type: 'string' },
+              { ...existing.columns[1], type: 'boolean' },
+              { ...existing.columns[2], type: 'number' },
             ],
           } as TableCfg;
           await expect(
@@ -271,7 +290,7 @@ export const runIoConformanceTests = (
               },
             ],
             _type: 'ingredients',
-            _tableCfg: '5xbrfD3vtlKPaLU4rcc5R3',
+            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
           },
         });
 
@@ -296,7 +315,7 @@ export const runIoConformanceTests = (
                 keyA2: 'a2',
               },
             ],
-            _tableCfg: '5xbrfD3vtlKPaLU4rcc5R3',
+            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
             _type: 'ingredients',
           },
         });
@@ -325,7 +344,7 @@ export const runIoConformanceTests = (
                 keyB2: 'b2',
               },
             ],
-            _tableCfg: '5xbrfD3vtlKPaLU4rcc5R3',
+            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
             _type: 'ingredients',
           },
         });
@@ -338,6 +357,7 @@ export const runIoConformanceTests = (
         const tableCfg: TableCfg = {
           ...exampleCfg,
           columns: [
+            { key: '_hash', type: 'string' },
             { key: 'keyA1', type: 'string' },
             { key: 'keyA2', type: 'string' },
             { key: 'keyB2', type: 'string' },
@@ -401,6 +421,7 @@ export const runIoConformanceTests = (
         const tableCfg: TableCfg = {
           ...exampleCfg,
           columns: [
+            { key: '_hash', type: 'string' },
             { key: 'string', type: 'string' },
             { key: 'number', type: 'number' },
             { key: 'null', type: 'string' },
@@ -414,6 +435,7 @@ export const runIoConformanceTests = (
         const allTableKeys = await ioTools.allTableKeys();
         expect(allTableKeys).toContain(tableName);
         expect(await ioTools.allColumnKeys(tableName)).toEqual([
+          '_hash',
           'string',
           'number',
           'null',
@@ -476,7 +498,7 @@ export const runIoConformanceTests = (
                 },
               },
             }),
-          ).rejects.toThrow('Table tableA does not exist');
+          ).rejects.toThrow('The following tables do not exist: tableA');
         });
 
         it('when the table has a different type then an existing one', async () => {
@@ -484,6 +506,7 @@ export const runIoConformanceTests = (
           const tableCfg: TableCfg = {
             ...exampleCfg,
             columns: [
+              { key: '_hash', type: 'string' },
               { key: 'keyA1', type: 'string' },
               { key: 'keyA2', type: 'string' },
               { key: 'keyB2', type: 'string' },
@@ -525,6 +548,7 @@ export const runIoConformanceTests = (
           const tableCfg: TableCfg = {
             ...exampleCfg,
             columns: [
+              { key: '_hash', type: 'string' },
               { key: 'string', type: 'string' },
               { key: 'number', type: 'number' },
               { key: 'null', type: 'string' },
@@ -779,7 +803,7 @@ export const runIoConformanceTests = (
             table: 'nonexistentTable',
             where: { column1: 'value1' },
           }),
-        ).rejects.toThrow('Table nonexistentTable not found');
+        ).rejects.toThrow('Table "nonexistentTable" not found');
       });
     });
 
@@ -851,7 +875,7 @@ export const runIoConformanceTests = (
       it('throws an error if the table does not exist', async () => {
         await expect(
           io.dumpTable({ table: 'nonexistentTable' }),
-        ).rejects.toThrow('Table nonexistentTable not found');
+        ).rejects.toThrow('Table "nonexistentTable" not found');
       });
     });
   });
