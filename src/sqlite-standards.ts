@@ -7,7 +7,6 @@
 
 import { SqlStandards } from './sql-standards.ts';
 
-
 export class DsSqliteStandards extends SqlStandards {
   tableReferences(referenceArray: string[]): string {
     return referenceArray
@@ -31,7 +30,7 @@ export class DsSqliteStandards extends SqlStandards {
     return `PRAGMA foreign_key_list(${tableName})`;
   }
 
-  public columnNames(tableName: string) {
+  public columnKeys(tableName: string) {
     return `PRAGMA table_info(${tableName})`;
   }
 

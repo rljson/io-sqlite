@@ -100,7 +100,7 @@ export abstract class SqlStandards {
   abstract tableNames: string;
 
   abstract foreignKeyList(tableName: string): string;
-  abstract columnNames(tableName: string): string;
+  abstract columnKeys(tableName: string): string;
   abstract tableReferences(referenceArray: string[]): string;
   abstract get tableExists(): string;
 

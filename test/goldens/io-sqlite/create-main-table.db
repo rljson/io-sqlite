@@ -2,71 +2,75 @@
   "tableCfgs": {
     "_data": [
       {
-        "_hash": "G1xMnKHke3wLBZuSTadsyl",
-        "version": 1,
-        "key": "tableCfgs",
-        "type": "ingredients",
-        "tableCfg": {
+        "version_col": 1,
+        "key_col": "tableCfgs",
+        "type_col": "ingredients",
+        "tableCfg_col": {
           "version": 1,
           "key": "tableCfgs",
           "type": "ingredients",
           "isHead": true,
           "isRoot": true,
           "isShared": false,
-          "columns": {
-            "version": {
+          "columns": [
+            {
+              "key": "version",
               "type": "number",
-              "_hash": "zd-Cda-hVAhTMHlYGtJ_lb"
+              "_hash": "jh-09qWJO1OPbi1accVjYD"
             },
-            "key": {
+            {
+              "key": "key",
               "type": "string",
-              "_hash": "AEBOaGQVNw8XEcTXrPopBU"
+              "_hash": "tapEY-QdaJwWhz1PPZoG35"
             },
-            "type": {
+            {
+              "key": "type",
               "type": "string",
-              "_hash": "AEBOaGQVNw8XEcTXrPopBU"
+              "_hash": "zE7ALsNzu5JPgDD4AxeRCh"
             },
-            "tableCfg": {
+            {
+              "key": "tableCfg",
               "type": "json",
-              "_hash": "CLlzqcsvw9Jsfn3rn71YUK"
-            },
-            "_hash": "W1kg7mVT7P1ZuILVYkltYo"
-          },
-          "_hash": "G1xMnKHke3wLBZuSTadsyl"
-        },
-        "previous": null
+              "_hash": "F90lF7nEnEFu1ZkHbnD3M9"
+            }
+          ],
+          "_hash": "Dx25v5iZF-enbhQslP1fPy"
+        }
       },
       {
-        "_hash": "KK7MV6tta9SVVZx_GSP3Dg",
-        "version": 1,
-        "key": "revisions",
-        "type": "ingredients",
-        "tableCfg": {
+        "version_col": 1,
+        "key_col": "revisions",
+        "type_col": "ingredients",
+        "tableCfg_col": {
           "version": 1,
           "key": "revisions",
           "type": "ingredients",
           "isHead": false,
           "isRoot": false,
           "isShared": true,
-          "columns": {
-            "table": {
+          "columns": [
+            {
+              "key": "table",
               "type": "string"
             },
-            "predecessor": {
+            {
+              "key": "predecessor",
               "type": "string"
             },
-            "successor": {
+            {
+              "key": "successor",
               "type": "string"
             },
-            "timestamp": {
+            {
+              "key": "timestamp",
               "type": "number"
             },
-            "id": {
+            {
+              "key": "id",
               "type": "string"
             }
-          }
-        },
-        "previous": null
+          ]
+        }
       }
     ],
     "_type": "ingredients",

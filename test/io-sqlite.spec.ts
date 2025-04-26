@@ -4,7 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { exampleTableCfg, TableCfg } from '@rljson/rljson';
+import { TableCfg } from '@rljson/rljson';
 
 import { existsSync } from 'fs';
 import { rmdir } from 'fs/promises';
@@ -12,8 +12,8 @@ import { dirname } from 'path';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
-import { SqlStandards } from '../src/sql-standards';
 
+import { expectGolden } from './setup/goldens';
 
 describe('IoSqlite', () => {
   let dbPath: string;
@@ -53,7 +53,9 @@ describe('IoSqlite', () => {
     it('should return all tables', async () => {
       // Execute example
       const contentOfTables = await testDb.dump();
-      console.log(contentOfTables);
+      await expectGolden('io-sqlite/create-main-table.db').toBe(
+        contentOfTables,
+      );
     });
   });
 
@@ -65,56 +67,20 @@ describe('IoSqlite', () => {
         isHead: false,
         isRoot: false,
         isShared: true,
-        columns: {
-          id: {
+        columns: [
+          {
             key: 'id',
             type: 'number',
           },
-          name: {
+          {
             key: 'name',
             type: 'string',
           },
-        },
+        ],
         type: 'cakes',
         version: 1,
       };
-      await testDb.createTable({ tableCfg });
-    });
-  });
-
-  describe('allColumnNames', () => {
-    const expectedColumnNames = [
-      {
-        name: '_hash',
-        type: 'TEXT',
-      },
-      {
-        name: 'a',
-        type: 'TEXT',
-      },
-      {
-        name: 'b',
-        type: 'REAL',
-      },
-    ];
-
-    describe('with a table name without a postfix', () => {
-      it('should return all column names', async () => {
-        await testDb.createTable({ tableCfg: exampleTableCfg() });
-        const allColumnNames = await testDb.allColumnNames('table');
-        expect(allColumnNames).toEqual(expectedColumnNames);
-      });
-    });
-
-    describe('with a table name with a postfix', () => {
-      it('should return all column names', async () => {
-        // Execute example
-        await testDb.createTable({ tableCfg: exampleTableCfg() });
-        const allColumnNames = await testDb.allColumnNames(
-          SqlStandards.addTablePostFix('table'),
-        );
-        expect(allColumnNames).toEqual(expectedColumnNames);
-      });
+      await testDb.createOrExtendTable({ tableCfg });
     });
   });
 });

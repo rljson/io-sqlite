@@ -37,7 +37,7 @@ suite('DsSqliteStandards', () => {
   test('allColumns generates correct query', () => {
     const tableName = 'testTable';
     const expectedQuery = `PRAGMA table_info(${tableName})`;
-    expect(dsSqliteStandards.columnNames(tableName)).toBe(expectedQuery);
+    expect(dsSqliteStandards.columnKeys(tableName)).toBe(expectedQuery);
   });
 
   test('tableReferences generates correct query', () => {
