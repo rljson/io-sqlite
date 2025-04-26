@@ -100,9 +100,11 @@ suite('SqlStandards', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.tablePostFix} (_hash TEXT PRIMARY KEY, version${SqlStandards.columnPostFix} INTEGER, key${SqlStandards.columnPostFix} TEXT KEY, type${SqlStandards.columnPostFix} TEXT, tableCfg${SqlStandards.columnPostFix} TEXT, previous${SqlStandards.columnPostFix} TEXT);`;
+    const expectedQuery = `CREATE TABLE IF NOT EXISTS tableCfgs_tbl (_hash TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, version_col REAL, columns_col TEXT)`;
     expect(
-      sqlStandards.createMainTable.replaceAll('\n', '').replaceAll(/\s+/g, ' '),
+      sqlStandards.createTableCfgsTable
+        .replaceAll('\n', '')
+        .replaceAll(/\s+/g, ' '),
     ).toBe(expectedQuery);
   });
 

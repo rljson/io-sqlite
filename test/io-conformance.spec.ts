@@ -16,6 +16,8 @@ import {
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { IoSqlite } from '../src/io-sqlite.ts';
+
 import { expectGolden } from './setup/goldens.ts';
 
 export const runIoConformanceTests = (
@@ -401,7 +403,7 @@ export const runIoConformanceTests = (
           columns: [
             { key: 'string', type: 'string' },
             { key: 'number', type: 'number' },
-            { key: 'null', type: 'null' },
+            { key: 'null', type: 'string' },
             { key: 'boolean', type: 'boolean' },
             { key: 'array', type: 'jsonArray' },
             { key: 'object', type: 'json' },
@@ -525,7 +527,7 @@ export const runIoConformanceTests = (
             columns: [
               { key: 'string', type: 'string' },
               { key: 'number', type: 'number' },
-              { key: 'null', type: 'null' },
+              { key: 'null', type: 'string' },
               { key: 'boolean', type: 'boolean' },
               { key: 'array', type: 'jsonArray' },
               { key: 'object', type: 'json' },
@@ -855,4 +857,4 @@ export const runIoConformanceTests = (
   });
 };
 
-runIoConformanceTests();
+runIoConformanceTests(() => IoSqlite.example());

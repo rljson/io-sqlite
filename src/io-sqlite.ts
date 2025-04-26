@@ -4,10 +4,10 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { hip, hsh } from '@rljson/hash';
+import { hsh } from '@rljson/hash';
 import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
-import { JsonValue, JsonValueType } from '@rljson/json';
+import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
   ContentType,
   iterateTables,
@@ -122,25 +122,34 @@ export class IoSqlite implements Io {
   // ...........................................................................
   async tableCfgs(): Promise<Rljson> {
     const result: Rljson = {};
-    const returnValue = this._db.prepare(_sql.currentTableCfgs).all();
-    const data = JSON.parse(JSON.stringify(returnValue)) as TableCfg[];
-    const ownCfg = data.find((cfg) => cfg.key === 'tableCfgs') as TableCfg;
+    const tableCfg = IoTools.tableCfgsTableCfg;
+
+    const returnValue = this._db.prepare(_sql.currentTableCfgs).all() as Json[];
+    const parsedReturnValue = this._parseData(returnValue, tableCfg);
+
+    const ownCfg = parsedReturnValue.find(
+      (cfg) => cfg.key === 'tableCfgs',
+    ) as TableCfg;
 
     result.tableCfgs = {
-      _data: data,
+      _data: parsedReturnValue,
       _type: 'ingredients',
       _tableCfg: ownCfg._hash as string,
     };
     return result;
   }
 
+  // ...........................................................................
   private async _tableCfg(tableName: string): Promise<TableCfg> {
     const returnValue = this._db
       .prepare(_sql.currentTableCfg)
       .get(SqlStandards.removeTablePostFix(tableName)) as any;
-    const returnCfg = JSON.parse(returnValue.tableCfg) as TableCfg;
+    const returnCfg = this._parseData(
+      [returnValue],
+      IoTools.tableCfgsTableCfg,
+    ) as TableCfg[];
 
-    return returnCfg;
+    return returnCfg[0];
   }
 
   async allTableNames(): Promise<string[]> {
@@ -159,7 +168,7 @@ export class IoSqlite implements Io {
   }
 
   createOrExtendTable(request: { tableCfg: TableCfg }): Promise<void> {
-    return this._createTable(request);
+    return this._createOrExtendTable(request);
   }
 
   // ######################
@@ -180,47 +189,39 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private _initTableCfgs = () => {
-    const tableCfg: TableCfg = {
-      version: 1,
-      key: 'tableCfgs',
-      type: 'ingredients',
-      isHead: true,
-      isRoot: true,
-      isShared: false,
-      columns: [
-        { key: 'version', type: 'number' },
-        { key: 'key', type: 'string' },
-        { key: 'type', type: 'string' },
-        { key: 'tableCfg', type: 'json' },
-      ],
-    };
-
-    hip(tableCfg);
-
-    const tableCfgHashed = hsh(tableCfg);
+    const tableCfg = IoTools.tableCfgsTableCfg;
 
     //create main table if it does not exist yet
-    this._db.prepare(_sql.createMainTable).run();
+    this._db.prepare(_sql.createTable(tableCfg)).run();
 
     // Write tableCfg as first row into tableCfgs tableso
     // As this is the first row to be entered, it is entered manually
 
-    this._db
-      .prepare(_sql.insertTableCfg)
-      .run(
-        tableCfgHashed._hash,
-        tableCfg.version,
-        tableCfg.key,
-        tableCfg.type,
-        JSON.stringify(tableCfg),
+    const values = this._serializeRow(tableCfg, tableCfg);
+
+    try {
+      const p = this._db.prepare(_sql.insertTableCfg);
+      p.run(...values);
+    } catch (error) {
+      throw new Error(
+        `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
+          tableCfg,
+        )}`,
       );
+    }
   };
 
   // ...........................................................................
-  private async _createTable(request: { tableCfg: TableCfg }): Promise<void> {
+  private async _createOrExtendTable(request: {
+    tableCfg: TableCfg;
+  }): Promise<void> {
+    // Make sure that the table config is compatible
+    // with an potential existing table
+    await this._ioTools.throwWhenTableIsNotCompatible(request.tableCfg);
+
     // Create table in sqlite database
 
-    //create config hash
+    // Create config hash
     const tableCfgHashed = hsh(request.tableCfg);
 
     // Check if table exists
@@ -233,29 +234,27 @@ export class IoSqlite implements Io {
       );
 
     if (!exists) {
-      this._db
-        .prepare(_sql.insertTableCfg)
-        .run(
-          tableCfgHashed._hash,
-          request.tableCfg.version,
-          request.tableCfg.key,
-          request.tableCfg.type,
-          JSON.stringify(request.tableCfg),
+      try {
+        const values = this._serializeRow(
+          tableCfgHashed,
+          IoTools.tableCfgsTableCfg,
         );
+
+        this._db.prepare(_sql.insertTableCfg).run(...values);
+      } catch (error) {
+        throw new Error(
+          `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
+            request.tableCfg,
+          )}`,
+        );
+      }
     } else {
+      // TODO: Extend table if it already exists
       throw new Error(`Table ${request.tableCfg.key} already exists`);
     }
 
     // Create actual table with name from tableCfg
-    const tableName = SqlStandards.addTablePostFix(request.tableCfg.key);
-    const columnsCfg = request.tableCfg.columns;
-    const columns = columnsCfg.map((col) => {
-      const sqliteType = _sql.dataType(col.type);
-      return `${SqlStandards.addColumnPostFix(col.key)} ${sqliteType}`;
-    });
-
-    const columnsString = columns.join(', ');
-    this._db.exec(_sql.createTable(tableName, columnsString));
+    this._db.exec(_sql.createTable(request.tableCfg));
   }
 
   // ...........................................................................
@@ -269,14 +268,15 @@ export class IoSqlite implements Io {
     }
 
     const tableCfg = await this._tableCfg(request.table);
-    const columnTypes = tableCfg.columns.map((col) => col.type);
     const columnKeys = tableCfg.columns.map((col) => col.key);
+    const columnKeysWithPostFix = columnKeys.map((col) =>
+      SqlStandards.addColumnPostFix(col),
+    );
 
-    const columnsResult = this._db
-      .prepare(_sql.columnKeys(tableKeyWithPostFix))
-      .all() as { name: string }[];
-    const columns = columnsResult.map((row) => row.name);
-    const columnNamesSql = await this._returnColumns(columns);
+    const columnNamesSql = await this._returnColumns(
+      columnKeysWithPostFix,
+      columnKeys,
+    );
 
     const whereString = this._whereString(Object.entries(request.where));
     const query = _sql.selection(
@@ -288,23 +288,65 @@ export class IoSqlite implements Io {
       [key: string]: any;
     }[];
 
-    const convertedResult: { [key: string]: any }[] = [];
-    for (const row of returnValue) {
+    const convertedResult = this._parseData(returnValue, tableCfg);
+
+    const result: Rljson = {
+      [request.table]: {
+        _data: convertedResult,
+      },
+    } as any;
+
+    return result;
+  }
+
+  private _serializeRow(
+    rowAsJson: Json,
+    tableCfg: TableCfg,
+  ): (JsonValue | null)[] {
+    const result: (JsonValue | null)[] = [];
+
+    // Iterate all columns in the tableCfg
+    for (const col of tableCfg.columns) {
+      const key = col.key;
+      let value = rowAsJson[key] ?? null;
+      const valueType = typeof value;
+
+      // Stringify objects and arrays
+      if (valueType === 'object') {
+        value = JSON.stringify(value);
+      }
+
+      // Convert booleans to 1 or 0
+      else if (valueType === 'boolean') {
+        value = value ? 1 : 0;
+      }
+
+      result.push(value);
+    }
+
+    return result;
+  }
+
+  private _parseData(data: Json[], tableCfg: TableCfg): Json[] {
+    const columnTypes = tableCfg.columns.map((col) => col.type);
+    const columnKeys = tableCfg.columns.map((col) => col.key);
+
+    const convertedResult: Json[] = [];
+
+    for (const row of data) {
       const convertedRow: { [key: string]: any } = {};
-      for (let colNum = 0; colNum < columns.length; colNum++) {
+      for (let colNum = 0; colNum < columnKeys.length; colNum++) {
         const key = columnKeys[colNum];
+        const keyWithPostFix = SqlStandards.addColumnPostFix(key);
         const type = columnTypes[colNum] as JsonValueType;
-        const val = row[key];
+        const val = row[keyWithPostFix];
         switch (type) {
           case 'boolean':
             convertedRow[key] = val !== 0;
             break;
-          case 'null':
-            convertedRow[key] = null as any;
-            break;
           case 'jsonArray':
           case 'json':
-            convertedRow[key] = JSON.parse(val);
+            convertedRow[key] = JSON.parse(val as string);
             break;
           case undefined:
             convertedRow[key] = val;
@@ -323,13 +365,7 @@ export class IoSqlite implements Io {
       convertedResult.push(convertedRow);
     }
 
-    const result: Rljson = {
-      [request.table]: {
-        _data: convertedResult,
-      },
-    } as any;
-
-    return result;
+    return convertedResult;
   }
 
   // ...........................................................................
@@ -358,50 +394,35 @@ export class IoSqlite implements Io {
 
     // get table's column structure
     const tableCfg = await this._tableCfg(request.table);
-    const columnTypes = tableCfg.columns.map((col) => col.type);
     const columnKeys = tableCfg.columns.map((col) => col.key);
     const columnKeysWithPostFix = columnKeys.map((col) =>
       SqlStandards.addColumnPostFix(col),
     );
 
     const returnFile: Rljson = {};
-    let returnData;
+    let returnData: Json[];
     try {
       returnData = this._db
         .prepare(
           _sql.allData(tableKeyWithPostFix, columnKeysWithPostFix.join(', ')),
         )
-        .all();
+        .all() as Json[];
     } catch (error) {
       throw new Error(`Failed to dump table ${request.table} ` + error);
     }
 
-    for (let i = 0; i < columnTypes.length; i++) {
-      const columnKey = columnKeysWithPostFix[i];
-      if (columnTypes[i] === 'json') {
-        for (const row of returnData) {
-          const typedRow = row as {
-            [key: string]: any;
-          };
-          if (typedRow[columnKey] !== null) {
-            const rowUnparsed = typedRow[columnKey];
-            const rowParsed = JSON.parse(rowUnparsed);
-            typedRow[columnKey] = rowParsed;
-          }
-        }
-      }
-    }
+    const parsedReturnData = this._parseData(returnData, tableCfg);
 
     const tableCfgHash = 'aa';
     const generalHash = 'aad';
     const tableType = (await this._tableType(request.table)) as ContentType;
     const table: TableType = {
-      _data: returnData as any,
+      _data: parsedReturnData as any,
       _type: tableType,
       _tableCfg: tableCfgHash,
       _hash: generalHash,
     };
-    returnFile[SqlStandards.removeTablePostFix(request.table)] = table;
+    returnFile[request.table] = table;
 
     return returnFile;
   }
@@ -417,7 +438,6 @@ export class IoSqlite implements Io {
     await iterateTables(hashedData, async (tableName, tableData) => {
       const tableCfg = await this._tableCfg(tableName);
       const columnTypes = tableCfg.columns.map((col) => col.type);
-      const columnKeys = tableCfg.columns.map((col) => col.key);
 
       // Create internal table name
       const tableKeyWithPostFix = SqlStandards.addTablePostFix(tableName);
@@ -544,12 +564,15 @@ export class IoSqlite implements Io {
     return valueList;
   }
 
-  async _returnColumns(columns: string[]): Promise<string> {
+  async _returnColumns(
+    columnKeysWithPostFix: string[],
+    columnKeys: string[],
+  ): Promise<string> {
     const columnNames: string[] = [];
-    for (const column of columns) {
-      columnNames.push(
-        `${column} AS [${SqlStandards.removeColumnPostFix(column)}]`,
-      );
+    for (let i = 0; i < columnKeys.length; i++) {
+      const key = columnKeys[i];
+      const keyWithPostFix = columnKeysWithPostFix[i];
+      columnNames.push(`${keyWithPostFix} AS [${key}]`);
     }
 
     return columnNames.join(', ');

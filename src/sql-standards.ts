@@ -5,6 +5,10 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import { IoTools } from '@rljson/io';
+import { JsonValueType } from '@rljson/json';
+import { TableCfg } from '@rljson/rljson';
+
 import { refName } from './constants.ts';
 
 export abstract class SqlStandards {
@@ -100,7 +104,11 @@ export abstract class SqlStandards {
   abstract tableNames: string;
 
   abstract foreignKeyList(tableName: string): string;
-  abstract columnKeys(tableName: string): string;
+
+  public columnKeys(tableName: string) {
+    return `PRAGMA table_info(${tableName})`;
+  }
+
   abstract tableReferences(referenceArray: string[]): string;
   abstract get tableExists(): string;
 
@@ -163,13 +171,50 @@ export abstract class SqlStandards {
     return `SELECT COUNT(*) FROM ${fixedTableName}`;
   }
 
-  public get createMainTable() {
-    return `CREATE TABLE IF NOT EXISTS tableCfgs${SqlStandards.tablePostFix}
-      (_hash TEXT PRIMARY KEY, version${SqlStandards.columnPostFix} INTEGER, key${SqlStandards.columnPostFix} TEXT KEY, type${SqlStandards.columnPostFix} TEXT, tableCfg${SqlStandards.columnPostFix} TEXT, previous${SqlStandards.columnPostFix} TEXT);`;
+  /**
+   * Converts a JSON value type to a SQLite data type.
+   * @param dataType - The JSON value type to convert.
+   * @returns - The corresponding SQLite data type.
+   */
+  public jsonToSqlType(dataType: JsonValueType): string {
+    switch (dataType) {
+      case 'string':
+        return 'TEXT';
+      case 'jsonArray':
+        return 'TEXT';
+      case 'json':
+        return 'TEXT';
+      case 'number':
+        return 'REAL';
+      case 'boolean':
+        return 'INTEGER';
+      default:
+        throw new Error(`Unsupported data type: ${dataType}`);
+    }
+  }
+
+  public createTable(tableCfg: TableCfg): string {
+    const sqlTableName = SqlStandards.addTablePostFix(tableCfg.key);
+    const columnsCfg = tableCfg.columns;
+
+    const sqlCreateColumns = columnsCfg
+      .map((col) => {
+        const sqliteType = this.jsonToSqlType(col.type);
+        return `${SqlStandards.addColumnPostFix(col.key)} ${sqliteType}`;
+      })
+      .join(', ');
+
+    return `CREATE TABLE IF NOT EXISTS ${sqlTableName} (${sqlCreateColumns})`;
+  }
+
+  public get createTableCfgsTable() {
+    return this.createTable(IoTools.tableCfgsTableCfg);
   }
 
   public get currentTableCfgs() {
-    return `SELECT _hash, version${SqlStandards.columnPostFix} AS version, key${SqlStandards.columnPostFix} AS key, type${SqlStandards.columnPostFix} AS type, tableCfg${SqlStandards.columnPostFix} AS tableCfg, previous${SqlStandards.columnPostFix} AS previous
+    // TODO: Muss dynamisch generiert werden aus IoTools.tableCfgsTableCfg
+
+    return `SELECT _hash, version${SqlStandards.columnPostFix}, key${SqlStandards.columnPostFix}, type${SqlStandards.columnPostFix}, columns${SqlStandards.columnPostFix}, previous${SqlStandards.columnPostFix}
      FROM tableCfgs${SqlStandards.tablePostFix} t1
       WHERE version${SqlStandards.columnPostFix} = (
         SELECT MAX(version${SqlStandards.columnPostFix})
@@ -179,7 +224,7 @@ export abstract class SqlStandards {
   }
 
   public get currentTableCfg() {
-    return `SELECT _hash, version${SqlStandards.columnPostFix} AS version, key${SqlStandards.columnPostFix} AS key, type${SqlStandards.columnPostFix} AS type, tableCfg${SqlStandards.columnPostFix} AS tableCfg, previous${SqlStandards.columnPostFix} AS previous
+    return `SELECT _hash, version${SqlStandards.columnPostFix}, key${SqlStandards.columnPostFix}, type${SqlStandards.columnPostFix}, columns${SqlStandards.columnPostFix}, previous${SqlStandards.columnPostFix}
      FROM tableCfgs${SqlStandards.tablePostFix} t1
       WHERE version${SqlStandards.columnPostFix} = (
         SELECT MAX(version${SqlStandards.columnPostFix})

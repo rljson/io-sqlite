@@ -5,6 +5,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
+import { IoTools } from '@rljson/io';
+
 import { SqlStandards } from './sql-standards.ts';
 
 export class DsSqliteStandards extends SqlStandards {
@@ -30,10 +32,6 @@ export class DsSqliteStandards extends SqlStandards {
     return `PRAGMA foreign_key_list(${tableName})`;
   }
 
-  public columnKeys(tableName: string) {
-    return `PRAGMA table_info(${tableName})`;
-  }
-
   // retrieve all data from a table using the original column names
   // i.e. without the postfix
   public allData(tableName: string, namedColumns?: string) {
@@ -48,33 +46,16 @@ export class DsSqliteStandards extends SqlStandards {
   }
 
   public get insertTableCfg() {
-    return `INSERT INTO ${SqlStandards.mainTable}${SqlStandards.tablePostFix} ( _hash, version${SqlStandards.columnPostFix}, key${SqlStandards.columnPostFix}, type${SqlStandards.columnPostFix}, tableCfg${SqlStandards.columnPostFix}) VALUES (?, ?, ?, ?, ?)`;
+    const columnKeys = IoTools.tableCfgsTableCfg.columns.map((col) => col.key);
+    const columnKeysWithPostfix = columnKeys.map((col) =>
+      col === '_hash' ? col : SqlStandards.addColumnPostFix(col),
+    );
+    const columnsSql = columnKeysWithPostfix.join(', ');
+    const valuesSql = '?, '.repeat(columnKeys.length - 1) + '?';
+
+    return `INSERT INTO ${SqlStandards.mainTable}${SqlStandards.tablePostFix} ( ${columnsSql} ) VALUES (${valuesSql})`;
   }
 
-  ///Equivalent data types
-  sqliteDatatypes = [
-    { type: 'string', sql: 'TEXT' },
-    { type: 'jsonArray', sql: 'TEXT' },
-    { type: 'json', sql: 'TEXT' },
-    { type: 'number', sql: 'REAL' },
-    { type: 'boolean', sql: 'INTEGER' },
-    { type: 'undefined', sql: 'BLOB' },
-    { type: 'null', sql: 'NULL' },
-  ];
-
-  public dataType(dataType: string) {
-    const type = this.sqliteDatatypes.find((t) => t.type === dataType);
-    if (!type) throw new Error(`Unknown data type: ${dataType}`);
-    return type.sql;
-  }
-
-  public createTable(tableName: string, columns: string): string {
-    if (!columns.includes('_hash')) {
-      columns = `_hash TEXT PRIMARY KEY, ${columns}`;
-    }
-
-    return `CREATE TABLE IF NOT EXISTS ${tableName} (${columns})`;
-  }
   public get tableExists() {
     return `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`;
   }
