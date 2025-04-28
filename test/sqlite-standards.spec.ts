@@ -64,11 +64,5 @@ suite('DsSqliteStandards', () => {
       const expectedType = dsSqliteStandards.jsonToSqlType('string');
       expect(expectedType).toBe('TEXT');
     });
-
-    test('with unknown type', () => {
-      expect(() => dsSqliteStandards.jsonToSqlType('unknown' as any)).throws(
-        'Unsupported data type: unknown',
-      );
-    });
   });
 });

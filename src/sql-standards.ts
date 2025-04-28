@@ -188,8 +188,8 @@ export abstract class SqlStandards {
         return 'REAL';
       case 'boolean':
         return 'INTEGER';
-      default:
-        throw new Error(`Unsupported data type: ${dataType}`);
+      case 'jsonValue':
+        return 'TEXT';
     }
   }
 
