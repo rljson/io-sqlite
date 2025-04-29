@@ -23,11 +23,9 @@ import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { SqlStandards } from './sql-standards.ts';
-import { DsSqliteStandards } from './sqlite-standards.ts';
+import { SqlStatements as SQL } from './sql-statements.ts';
 
 type DBType = Database.Database;
-const _sql = new DsSqliteStandards();
 
 export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
 
@@ -119,7 +117,7 @@ export class IoSqlite implements Io {
   async rowCount(table: string): Promise<number> {
     await this._ioTools.throwWhenTableDoesNotExist(table);
 
-    const result = this._db.prepare(_sql.currentCount(table)).get() as {
+    const result = this._db.prepare(SQL.rowCount(table)).get() as {
       'COUNT(*)': number;
     };
     return result['COUNT(*)'];
@@ -135,7 +133,7 @@ export class IoSqlite implements Io {
     const result: Rljson = {};
     const tableCfg = IoTools.tableCfgsTableCfg;
 
-    const returnValue = this._db.prepare(_sql.currentTableCfgs).all() as Json[];
+    const returnValue = this._db.prepare(SQL.tableCfgs).all() as Json[];
     const parsedReturnValue = this._parseData(returnValue, tableCfg);
 
     const ownCfg = parsedReturnValue.find(
@@ -152,9 +150,7 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private async _tableCfg(tableName: string): Promise<TableCfg> {
-    const returnValue = this._db
-      .prepare(_sql.currentTableCfg)
-      .get(SqlStandards.removeTablePostFix(tableName)) as any;
+    const returnValue = this._db.prepare(SQL.tableCfg).get(tableName) as any;
     const returnCfg = this._parseData(
       [returnValue],
       IoTools.tableCfgsTableCfg,
@@ -163,13 +159,12 @@ export class IoSqlite implements Io {
     return returnCfg[0];
   }
 
-  async allTableNames(): Promise<string[]> {
-    const query = _sql.tableNames;
-    const returnValue = this._db.prepare(query).all();
-    const tableNames = (returnValue as { name: string }[]).map((row) =>
-      SqlStandards.removeTablePostFix(row.name),
+  async alltableKeys(): Promise<string[]> {
+    const returnValue = this._db.prepare(SQL.tableKeys).all();
+    const tableKeys = (returnValue as { name: string }[]).map((row) =>
+      SQL.removeTableSuffix(row.name),
     );
-    return tableNames;
+    return tableKeys;
   }
 
   // ...........................................................................
@@ -203,7 +198,7 @@ export class IoSqlite implements Io {
     const tableCfg = IoTools.tableCfgsTableCfg;
 
     //create main table if it does not exist yet
-    this._db.prepare(_sql.createTable(tableCfg)).run();
+    this._db.prepare(SQL.createTable(tableCfg)).run();
 
     // Write tableCfg as first row into tableCfgs tableso
     // As this is the first row to be entered, it is entered manually
@@ -211,7 +206,7 @@ export class IoSqlite implements Io {
     const values = this._serializeRow(tableCfg, tableCfg);
 
     try {
-      const p = this._db.prepare(_sql.insertTableCfg);
+      const p = this._db.prepare(SQL.insertTableCfg());
       p.run(...values);
     } catch (error) {
       throw new Error(
@@ -231,18 +226,13 @@ export class IoSqlite implements Io {
     await this._ioTools.throwWhenTableIsNotCompatible(request.tableCfg);
 
     // Create table in sqlite database
+    const tableKey = request.tableCfg.key;
 
     // Create config hash
     const tableCfgHashed = hsh(request.tableCfg);
 
     // Check if table exists
-    const exists = this._db
-      .prepare(_sql.tableCfg)
-      .get(
-        request.tableCfg.key,
-        request.tableCfg.type,
-        request.tableCfg.version,
-      );
+    const exists = this._db.prepare(SQL.tableCfg).get(tableKey);
 
     if (!exists) {
       try {
@@ -251,7 +241,7 @@ export class IoSqlite implements Io {
           IoTools.tableCfgsTableCfg,
         );
 
-        this._db.prepare(_sql.insertTableCfg).run(...values);
+        this._db.prepare(SQL.insertTableCfg()).run(...values);
       } catch (error) {
         throw new Error(
           `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
@@ -261,11 +251,36 @@ export class IoSqlite implements Io {
       }
     } else {
       // TODO: Extend table if it already exists
-      throw new Error(`Table ${request.tableCfg.key} already exists`);
+
+      // extend table
+      // 1. copy data from old table to temp table
+      this._db.prepare(SQL.createTempTable(tableKey)).run();
+      // 2. drop old table
+      this._db.prepare(SQL.dropTable(tableKey)).run();
+      // 3. create new taable
+      this._db.prepare(SQL.createTable(request.tableCfg)).run();
+      // 4. fill data back into new table
+      // a. find common columns
+
+      const tempColumns = this._db.prepare(SQL.columnKeys(tableKey)).run();
+      // const newColumns = this._db.prepare( SQL.columnKeys(tableKey + this._db.prepare( SQL.fix.tbl)).run();
+      console.log('tempColumns', tempColumns);
+
+      // const mutualColumns = tempColumns;
+      //   .split('\n')
+      //   .filter((col) => newColumns.split('\n').includes(col))
+      //   .map((col) => col.trim());
+
+      // return mutualColumns.join(', ');
+      //   const mutualColumns = SQL.mutualColumns(tableKey);
+
+      // this._db
+      //   .prepare(SQL.fillTable(tableKey, mutualColumns.join(', ')))
+      //   .run();
     }
 
     // Create actual table with name from tableCfg
-    this._db.exec(_sql.createTable(request.tableCfg));
+    this._db.exec(SQL.createTable(request.tableCfg));
   }
 
   // ...........................................................................
@@ -275,15 +290,15 @@ export class IoSqlite implements Io {
   }): Promise<Rljson> {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
 
-    const tableKeyWithPostFix = SqlStandards.addTablePostFix(request.table);
-    if (!this._tableExists(tableKeyWithPostFix)) {
+    const tableKeyWithSuffix = SQL.addTableSuffix(request.table);
+    if (!this._tableExists(tableKeyWithSuffix)) {
       throw new Error(`Table ${request.table} not found`);
     }
 
     const tableCfg = await this._tableCfg(request.table);
 
     const whereString = this._whereString(Object.entries(request.where));
-    const query = _sql.selection(tableKeyWithPostFix, '*', whereString);
+    const query = SQL.selection(tableKeyWithSuffix, '*', whereString);
     const returnValue = this._db.prepare(query).all() as {
       [key: string]: any;
     }[];
@@ -337,9 +352,9 @@ export class IoSqlite implements Io {
       const convertedRow: { [key: string]: any } = {};
       for (let colNum = 0; colNum < columnKeys.length; colNum++) {
         const key = columnKeys[colNum];
-        const keyWithPostFix = SqlStandards.addColumnPostFix(key);
+        const keyWithSuffix = SQL.addColumnSuffix(key);
         const type = columnTypes[colNum] as JsonValueType;
-        const val = row[keyWithPostFix];
+        const val = row[keyWithSuffix];
 
         if (val === undefined) {
           convertedRow[key] = null;
@@ -378,13 +393,15 @@ export class IoSqlite implements Io {
 
   private async _dump(): Promise<Rljson> {
     const returnFile: Rljson = {};
-    const tables = this._db.prepare(_sql.tableNames).all();
+    const tables = this._db.prepare(SQL.tableKeys).all();
 
     for (const table of tables as { name: string }[]) {
-      const tableDump: Rljson = await this._dumpTable({ table: table.name });
+      const tableDump: Rljson = await this._dumpTable({
+        table: SQL.removeTableSuffix(table.name),
+      });
 
-      returnFile[SqlStandards.removeTablePostFix(table.name)] =
-        tableDump[SqlStandards.removeTablePostFix(table.name)];
+      returnFile[SQL.removeTableSuffix(table.name)] =
+        tableDump[SQL.removeTableSuffix(table.name)];
     }
 
     return returnFile;
@@ -394,17 +411,13 @@ export class IoSqlite implements Io {
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
 
-    const tableKeyWithPostFix = request.table.endsWith(
-      SqlStandards.tablePostFix,
-    )
-      ? request.table
-      : SqlStandards.addTablePostFix(request.table);
+    const tableKeyWithSuffix = SQL.addTableSuffix(request.table);
 
     // get table's column structure
     const tableCfg = await this._tableCfg(request.table);
     const columnKeys = tableCfg.columns.map((col) => col.key);
-    const columnKeysWithPostFix = columnKeys.map((col) =>
-      SqlStandards.addColumnPostFix(col),
+    const columnKeysWithSuffix = columnKeys.map((col) =>
+      SQL.addColumnSuffix(col),
     );
 
     const returnFile: Rljson = {};
@@ -412,7 +425,7 @@ export class IoSqlite implements Io {
     try {
       returnData = this._db
         .prepare(
-          _sql.allData(tableKeyWithPostFix, columnKeysWithPostFix.join(', ')),
+          SQL.allData(tableKeyWithSuffix, columnKeysWithSuffix.join(', ')),
         )
         .all() as Json[];
     } catch (error) {
@@ -447,10 +460,10 @@ export class IoSqlite implements Io {
       const tableCfg = await this._tableCfg(tableName);
 
       // Create internal table name
-      const tableKeyWithPostFix = SqlStandards.addTablePostFix(tableName);
+      const tableKeyWithSuffix = SQL.addTableSuffix(tableName);
 
       // Check if table exists
-      if (!this._tableExists(tableKeyWithPostFix)) {
+      if (!this._tableExists(tableKeyWithSuffix)) {
         errorCount++;
         errorStore.set(errorCount, `Table ${tableName} does not exist`);
         return;
@@ -472,10 +485,10 @@ export class IoSqlite implements Io {
         // (each row might have a different number of columns)
         const columnKeys = tableCfg.columns.map((col) => col.key);
         const columnKeysWithPostfix = columnKeys.map((column) =>
-          SqlStandards.addColumnPostFix(column),
+          SQL.addColumnSuffix(column),
         );
         const placeholders = columnKeys.map(() => '?').join(', ');
-        const query = `INSERT INTO ${tableKeyWithPostFix} (${columnKeysWithPostfix.join(
+        const query = `INSERT INTO ${tableKeyWithSuffix} (${columnKeysWithPostfix.join(
           ', ',
         )}) VALUES (${placeholders})`;
 
@@ -489,8 +502,8 @@ export class IoSqlite implements Io {
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
           const fixedErrorMessage = errorMessage
-            .replace(SqlStandards.columnPostFix, '')
-            .replace(SqlStandards.tablePostFix, '');
+            .replace(SQL.suffix.col, '')
+            .replace(SQL.suffix.tbl, '');
 
           errorCount++;
           errorStore.set(
@@ -509,36 +522,34 @@ export class IoSqlite implements Io {
 
   _tableExists(tableKey: string): boolean {
     /* v8 ignore start */
-    const tableKeyWithPostFix = tableKey.endsWith(SqlStandards.tablePostFix)
-      ? tableKey
-      : SqlStandards.addTablePostFix(tableKey);
+    const tableKeyWithSuffix = SQL.addTableSuffix(tableKey);
     /* v8 ignore end */
     const result = this._db
-      .prepare(_sql.tableExists)
-      .get(tableKeyWithPostFix) as {
+      .prepare(SQL.tableExists)
+      .get(tableKeyWithSuffix) as {
       count: number;
     };
     return result ? true : false;
   }
 
   _tableTypeCheck(tableName: string, tableType: string): boolean {
-    const tableKey = SqlStandards.addColumnPostFix('type');
+    const tableKey = SQL.addColumnSuffix('type');
 
     const result = this._db
-      .prepare(_sql.tableTypeCheck)
+      .prepare(SQL.tableTypeCheck)
       .get(tableName) as Record<string, string>;
     return tableType === result[tableKey] ? true : false;
   }
 
   async _returnColumns(
-    columnKeysWithPostFix: string[],
+    columnKeysWithSuffix: string[],
     columnKeys: string[],
   ): Promise<string> {
     const columnNames: string[] = [];
     for (let i = 0; i < columnKeys.length; i++) {
       const key = columnKeys[i];
-      const keyWithPostFix = columnKeysWithPostFix[i];
-      columnNames.push(`${keyWithPostFix} AS [${key}]`);
+      const keyWithSuffix = columnKeysWithSuffix[i];
+      columnNames.push(`${keyWithSuffix} AS [${key}]`);
     }
 
     return columnNames.join(', ');
@@ -547,7 +558,7 @@ export class IoSqlite implements Io {
   _whereString(whereClause: [string, JsonValue][]): string {
     let whereString: string = ' ';
     for (const [column, value] of whereClause) {
-      const columnWithFix = SqlStandards.addColumnPostFix(column);
+      const columnWithFix = SQL.addColumnSuffix(column);
 
       if (typeof value === 'string') {
         whereString += `${columnWithFix} = '${value}' AND `;
@@ -572,9 +583,21 @@ export class IoSqlite implements Io {
   }
 
   async _tableType(tableName: string): Promise<string> {
-    const tableCfg = await this._tableCfg(
-      SqlStandards.removeTablePostFix(tableName),
-    );
+    const tableCfg = await this._tableCfg(SQL.removeTableSuffix(tableName));
     return tableCfg.type;
+  }
+
+  async _mutualColumns(tableKey: string): Promise<string> {
+    const tempColumns = this._db.prepare(SQL.columnKeys(tableKey)).all();
+    // const newColumns = this._db
+    //   .prepare(SQL.columnKeys(tableKey + SQL.fix.tbl))
+    //   .all();
+
+    const mutualColumns = tempColumns;
+    //   .split('\n')
+    //   .filter((col) => newColumns.split('\n').includes(col))
+    //   .map((col) => col.trim());
+
+    return mutualColumns.join(', ');
   }
 }

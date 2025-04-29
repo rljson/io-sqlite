@@ -6,19 +6,14 @@
 
 import { hip, rmhsh } from '@rljson/hash';
 import { Io, IoMem, IoTools } from '@rljson/io';
-import {
-  exampleTableCfg,
-  IngredientsTable,
-  Rljson,
-  TableCfg,
-  TableType,
-} from '@rljson/rljson';
+import { exampleTableCfg, IngredientsTable, Rljson, TableCfg, TableType } from '@rljson/rljson';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
+
 
 export const runIoConformanceTests = (
   createIo: () => Promise<Io> = async () => IoMem.example(),

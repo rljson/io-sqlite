@@ -51,13 +51,11 @@ describe('IoSqlite', () => {
     expect(ioSqlite).toBeDefined();
   });
 
-  describe('create main table', () => {
+  describe('creation and retrieval (timing-problem!!)', () => {
     it('should return all tables', async () => {
       // Execute example
       const contentOfTables = await testDb.dump();
-      await expectGolden('io-sqlite/create-main-table.db').toBe(
-        contentOfTables,
-      );
+      await expectGolden('io-sqlite/db-content.json').toBe(contentOfTables);
     });
   });
 
