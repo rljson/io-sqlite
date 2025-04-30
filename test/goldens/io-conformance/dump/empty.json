@@ -59,7 +59,6 @@
         "isHead": true,
         "isRoot": true,
         "isShared": false,
-        "previous": null,
         "columns": [
           {
             "key": "_hash",
@@ -95,13 +94,13 @@
       }
     ],
     "_type": "ingredients",
-    "_tableCfg": "aa",
-    "_hash": "aad"
+    "_tableCfg": "oS4O57K1hbZY9hQzRID9nO",
+    "_hash": "6ZByAWSWrZQelV0J2VIWmA"
   },
   "revisions": {
     "_data": [],
     "_type": "ingredients",
-    "_tableCfg": "aa",
-    "_hash": "aad"
+    "_tableCfg": "CubBZQUGTMLa5wMqqzHLXz",
+    "_hash": "aDu42jw4P9loqUXwTcogGG"
   }
 }

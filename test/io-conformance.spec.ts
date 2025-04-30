@@ -90,6 +90,9 @@ export const runIoConformanceTests = (
           ._data as unknown as TableCfg[];
 
         expect(actualTableCfgs.length).toBe(3);
+
+        // TODO: Currently table v0 is contained twice, version filtering needed
+
         expect((actualTableCfgs[0] as TableCfg).key).toBe('tableCfgs');
         expect((actualTableCfgs[1] as TableCfg).key).toBe('revisions');
         expect((actualTableCfgs[2] as TableCfg).key).toBe('table0');
@@ -321,6 +324,7 @@ export const runIoConformanceTests = (
         const dump2 = rmhsh(await io.dumpTable({ table: 'tableA' }));
 
         // Only the hash of the table config has changed
+        // TODO: _tableCfg needs to be updated. Probably this is fixed when tableCfgs() is repaired
         expect(dump.tableA._tableCfg).not.toEqual(dump2.tableA._tableCfg);
 
         const dumpExpected2 = {
