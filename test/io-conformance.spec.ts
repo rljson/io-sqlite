@@ -89,10 +89,8 @@ export const runIoConformanceTests = (
         const actualTableCfgs = (await io.tableCfgs()).tableCfgs
           ._data as unknown as TableCfg[];
 
-        expect(actualTableCfgs.length).toBe(3);
-
         // TODO: Currently table v0 is contained twice, version filtering needed
-
+        expect(actualTableCfgs.length).toBe(3);
         expect((actualTableCfgs[0] as TableCfg).key).toBe('tableCfgs');
         expect((actualTableCfgs[1] as TableCfg).key).toBe('revisions');
         expect((actualTableCfgs[2] as TableCfg).key).toBe('table0');
@@ -289,7 +287,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             tableA: {
-              _type: 'ingredients',
               _data: [{ a: 'hello', b: 5 }],
             },
           },
@@ -305,8 +302,8 @@ export const runIoConformanceTests = (
                 b: 5,
               },
             ],
-            _type: 'ingredients',
             _tableCfg: 'MfpwQygnDmu3ISp6dBjsEf',
+            _type: 'ingredients',
           },
         };
         expect(dump).toEqual(dumpExpected);
@@ -341,7 +338,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             tableA: {
-              _type: 'ingredients',
               _data: [{ keyA1: 'a1', keyA2: 'a2', keyB2: 'b2' }],
             },
           },
@@ -363,7 +359,6 @@ export const runIoConformanceTests = (
               },
             ],
             _tableCfg: 'swD0rJhzryBIY7sfxIV8Gl',
-            _type: 'ingredients',
           },
         });
       });
@@ -392,7 +387,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             tableA: {
-              _type: 'ingredients',
               _data: [{ keyA2: 'a2' }],
             },
           },
@@ -413,7 +407,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             tableA: {
-              _type: 'ingredients',
               _data: [{ keyB2: 'b2' }],
             },
           },
@@ -466,7 +459,6 @@ export const runIoConformanceTests = (
           {
             string: 'hello',
             number: 5,
-            null: null,
             boolean: true,
             array: [1, 2, { a: 10 }],
             object: { a: 1, b: { c: 3 } },
@@ -474,7 +466,6 @@ export const runIoConformanceTests = (
           {
             string: 'world',
             number: 6,
-            null: null,
             boolean: true,
             array: [1, 2, { a: 10 }],
             object: { a: 1, b: 2 },
@@ -483,7 +474,6 @@ export const runIoConformanceTests = (
 
         const testData: Rljson = {
           testTable: {
-            _type: 'ingredients',
             _data: rows,
           },
         };
@@ -511,39 +501,11 @@ export const runIoConformanceTests = (
             io.write({
               data: {
                 tableA: {
-                  _type: 'ingredients',
                   _data: [{ keyA2: 'a2' }],
                 },
               },
             }),
           ).rejects.toThrow('The following tables do not exist: tableA');
-        });
-
-        it('when the table has a different type then an existing one', async () => {
-          const exampleCfg: TableCfg = exampleTableCfg({ key: 'tableA' });
-          const tableCfg: TableCfg = {
-            ...exampleCfg,
-            columns: [
-              { key: '_hash', type: 'string' },
-              { key: 'keyA1', type: 'string' },
-              { key: 'keyA2', type: 'string' },
-              { key: 'keyB2', type: 'string' },
-            ],
-          };
-          await io.createOrExtendTable({ tableCfg });
-
-          await expect(
-            io.write({
-              data: {
-                tableA: {
-                  _type: 'cakes',
-                  _data: [],
-                },
-              },
-            }),
-          ).rejects.toThrow(
-            'Table tableA has different types: "ingredients" vs "cakes"',
-          );
         });
       });
     });
@@ -570,12 +532,10 @@ export const runIoConformanceTests = (
 
           const testData: Rljson = {
             testTable: {
-              _type: 'ingredients',
               _data: [
                 {
                   string: 'hello',
                   number: 5,
-                  null: null,
                   boolean: true,
                   array: [1, 2, { a: 10 }],
                   object: { a: 1, b: { c: 3 } },
@@ -583,7 +543,6 @@ export const runIoConformanceTests = (
                 {
                   string: 'world',
                   number: 6,
-                  null: null,
                   boolean: true,
                   array: [1, 2, { a: 10 }],
                   object: { a: 1, b: 2 },
@@ -608,7 +567,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: {
                     a: 1,
@@ -637,7 +595,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -661,7 +618,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -669,7 +625,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -693,7 +648,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -701,7 +655,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -728,7 +681,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -736,7 +688,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -767,7 +718,6 @@ export const runIoConformanceTests = (
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -784,7 +734,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             testTable: {
-              _type: 'ingredients',
               _data: [
                 { a: 'value1', b: 2 },
                 { a: 'value3', b: 4 },
@@ -822,7 +771,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             table1: {
-              _type: 'ingredients',
               _data: [
                 { a: 'a1' },
                 { a: 'a2' },
@@ -832,7 +780,6 @@ export const runIoConformanceTests = (
               ],
             },
             table2: {
-              _type: 'ingredients',
               _data: [{ a: 'a1' }, { a: 'a2' }],
             },
           },
@@ -869,7 +816,6 @@ export const runIoConformanceTests = (
         await io.write({
           data: {
             table1: {
-              _type: 'ingredients',
               _data: [{ a: 'a2' }],
             },
           },

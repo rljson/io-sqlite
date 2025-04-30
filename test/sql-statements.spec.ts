@@ -105,10 +105,8 @@ describe('SQlStatements', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE tableCfgs_tbl (_hash_col TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, version_col REAL, previous_col TEXT, columns_col TEXT)`;
-    expect(
-      SQL.createTableCfgsTable.replaceAll('\n', '').replaceAll(/\s+/g, ' '),
-    ).toBe(expectedQuery);
+    const expectedQuery = `CREATE TABLE tableCfgs_tbl (_hash_col TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, previous_col TEXT, columns_col TEXT)`;
+    expect(SQL.createTableCfgsTable).toBe(expectedQuery);
   });
 
   test('createFullTable generates correct query', () => {

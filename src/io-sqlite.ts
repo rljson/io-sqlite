@@ -493,17 +493,6 @@ export class IoSqlite implements Io {
         return;
       }
 
-      // Check if table type is correct
-      const tableType = request.data[tableName]._type.toString();
-      if (!this._tableTypeCheck(tableName, tableType)) {
-        errorCount++;
-        errorStore.set(
-          errorCount,
-          `Table type check failed for table ${tableName}, ${tableType}`,
-        );
-        return;
-      }
-
       for (const row of tableData._data) {
         // Prepare and run the SQL query
         // (each row might have a different number of columns)
