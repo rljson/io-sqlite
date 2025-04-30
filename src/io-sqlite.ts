@@ -294,7 +294,10 @@ export class IoSqlite implements Io {
 
     // Add new columns to the table
     const alter = sql.alterTable(tableKey, addedColumns);
-    this._db.prepare(alter).run();
+    for (const statement of alter) {
+      this._db.prepare(statement).run();
+    }
+    // this._db.prepare(alter).run();
   }
 
   // ...........................................................................

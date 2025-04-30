@@ -17,6 +17,7 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
+
 export class SqlStatements {
   /// simple  keywords and statements*******************
   static connectingColumn: string = '_hash';
@@ -242,6 +243,13 @@ export class SqlStatements {
       })
       .join(', ');
 
+    // standard primary key - do not remove ;-)
+    const colsWithPrimaryKey = sqlCreateColumns.replace(
+      /_hash TEXT/g,
+      '_hash TEXT PRIMARY KEY',
+    );
+
+    // foreign keys if there are any (not yet implemented again)
     const foreignKeys = this.tableReferences(
       columnsCfg
         .map((col) => col.key)
@@ -249,11 +257,11 @@ export class SqlStatements {
     );
     console.log('foreignKeys', foreignKeys);
     const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
-    return `CREATE TABLE ${sqltableKey} (${sqlCreateColumns}${sqlForeignKeys})`;
+    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
     //return `CREATE TABLE ${sqltableKey} (${sqlCreateColumns})`;
   }
 
-  static alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string {
+  static alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
     const tableKeyWithSuffix = this.addTableSuffix(tableKey);
     const statements: string[] = [];
     for (const col of addedColumns) {
@@ -264,7 +272,7 @@ export class SqlStatements {
       );
     }
 
-    return statements.join('\n');
+    return statements;
   }
 
   static get createTableCfgsTable() {
