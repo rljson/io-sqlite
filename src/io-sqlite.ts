@@ -222,7 +222,6 @@ export class IoSqlite implements Io {
     tableCfg: TableCfg;
   }): Promise<void> {
     // Make sure that the table config is compatible
-    // with an potential existing table
     await this._ioTools.throwWhenTableIsNotCompatible(request.tableCfg);
 
     // Create table in sqlite database
@@ -235,52 +234,63 @@ export class IoSqlite implements Io {
     const exists = this._db.prepare(sql.tableCfg).get(tableKey);
 
     if (!exists) {
-      try {
-        const values = this._serializeRow(
-          tableCfgHashed,
-          IoTools.tableCfgsTableCfg,
-        );
-
-        this._db.prepare(sql.insertTableCfg()).run(...values);
-      } catch (error) {
-        throw new Error(
-          `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
-            request.tableCfg,
-          )}`,
-        );
-      }
+      this._createTable(tableCfgHashed, request);
     } else {
-      // TODO: Extend table if it already exists
-
-      // extend table
-      // 1. copy data from old table to temp table
-      this._db.prepare(sql.createTempTable(tableKey)).run();
-      // 2. drop old table
-      this._db.prepare(sql.dropTable(tableKey)).run();
-      // 3. create new taable
-      this._db.prepare(sql.createTable(request.tableCfg)).run();
-      // 4. fill data back into new table
-      // a. find common columns
-
-      const tempColumns = this._db.prepare(sql.columnKeys(tableKey)).run();
-      // const newColumns = this._db.prepare( SQL.columnKeys(tableKey + this._db.prepare( SQL.fix.tbl)).run();
-      console.log('tempColumns', tempColumns);
-
-      // const mutualColumns = tempColumns;
-      //   .split('\n')
-      //   .filter((col) => newColumns.split('\n').includes(col))
-      //   .map((col) => col.trim());
-
-      // return mutualColumns.join(', ');
-      //   const mutualColumns = SQL.mutualColumns(tableKey);
-
-      // this._db
-      //   .prepare(SQL.fillTable(tableKey, mutualColumns.join(', ')))
-      //   .run();
+      this._extendTable(tableCfgHashed);
     }
+  }
 
-    // Create actual table with name from tableCfg
-    this._db.exec(sql.createTable(request.tableCfg));
+  // ...........................................................................
+  private _createTable(
+    tableCfgHashed: TableCfg,
+    request: { tableCfg: TableCfg },
+  ) {
+    try {
+      const values = this._serializeRow(
+        tableCfgHashed,
+        IoTools.tableCfgsTableCfg,
+      );
+      this._db.prepare(sql.insertTableCfg()).run(...values);
+      this._db.exec(sql.createTable(request.tableCfg));
+    } catch (error) {
+      throw new Error(
+        `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
+          request.tableCfg,
+        )}`,
+      );
+    }
+  }
+
+  // ...........................................................................
+  private _extendTable(tableCfg: TableCfg) {
+    // TODO: Extend table if it already exists
+    const tableKey = tableCfg.key;
+
+    // extend table
+    // 1. copy data from old table to temp table
+    this._db.prepare(sql.createTempTable(tableKey)).run();
+    // 2. drop old table
+    this._db.prepare(sql.dropTable(tableKey)).run();
+    // 3. create new taable
+    this._db.prepare(sql.createTable(tableCfg)).run();
+    // 4. fill data back into new table
+    // a. find common columns
+
+    const tempColumns = this._db.prepare(sql.columnKeys(tableKey)).run();
+    // const newColumns = this._db.prepare( SQL.columnKeys(tableKey + this._db.prepare( SQL.fix.tbl)).run();
+    console.log('tempColumns', tempColumns);
+
+    // const mutualColumns = tempColumns;
+    //   .split('\n')
+    //   .filter((col) => newColumns.split('\n').includes(col))
+    //   .map((col) => col.trim());
+
+    // return mutualColumns.join(', ');
+    //   const mutualColumns = SQL.mutualColumns(tableKey);
+
+    // this._db
+    //   .prepare(SQL.fillTable(tableKey, mutualColumns.join(', ')))
+    //   .run();
   }
 
   // ...........................................................................
