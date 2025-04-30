@@ -4,11 +4,12 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { hsh } from '@rljson/hash';
+import { hip, hsh } from '@rljson/hash';
 import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
+  ColumnCfg,
   ContentType,
   iterateTables,
   Rljson,
@@ -246,11 +247,7 @@ export class IoSqlite implements Io {
     request: { tableCfg: TableCfg },
   ) {
     try {
-      const values = this._serializeRow(
-        tableCfgHashed,
-        IoTools.tableCfgsTableCfg,
-      );
-      this._db.prepare(sql.insertTableCfg()).run(...values);
+      this._insertTableCfg(tableCfgHashed);
       this._db.exec(sql.createTable(request.tableCfg));
     } catch (error) {
       throw new Error(
@@ -262,35 +259,42 @@ export class IoSqlite implements Io {
   }
 
   // ...........................................................................
-  private _extendTable(tableCfg: TableCfg) {
-    // TODO: Extend table if it already exists
-    const tableKey = tableCfg.key;
+  private _insertTableCfg(tableCfgHashed: TableCfg) {
+    hip(tableCfgHashed);
+    const values = this._serializeRow(
+      tableCfgHashed,
+      IoTools.tableCfgsTableCfg,
+    );
+    this._db.prepare(sql.insertTableCfg()).run(...values);
+  }
 
-    // extend table
-    // 1. copy data from old table to temp table
-    this._db.prepare(sql.createTempTable(tableKey)).run();
-    // 2. drop old table
-    this._db.prepare(sql.dropTable(tableKey)).run();
-    // 3. create new taable
-    this._db.prepare(sql.createTable(tableCfg)).run();
-    // 4. fill data back into new table
-    // a. find common columns
+  // ...........................................................................
+  private async _extendTable(newTableCfg: TableCfg): Promise<void> {
+    // Estimate added columns
+    const tableKey = newTableCfg.key;
+    const oldTableCfg = await this._ioTools.tableCfg(tableKey);
 
-    const tempColumns = this._db.prepare(sql.columnKeys(tableKey)).run();
-    // const newColumns = this._db.prepare( SQL.columnKeys(tableKey + this._db.prepare( SQL.fix.tbl)).run();
-    console.log('tempColumns', tempColumns);
+    const addedColumns: ColumnCfg[] = [];
+    for (
+      let i = oldTableCfg.columns.length;
+      i < newTableCfg.columns.length;
+      i++
+    ) {
+      const newColumn = newTableCfg.columns[i];
+      addedColumns.push(newColumn);
+    }
 
-    // const mutualColumns = tempColumns;
-    //   .split('\n')
-    //   .filter((col) => newColumns.split('\n').includes(col))
-    //   .map((col) => col.trim());
+    // No columns added? Do nothing.
+    if (addedColumns.length === 0) {
+      return;
+    }
 
-    // return mutualColumns.join(', ');
-    //   const mutualColumns = SQL.mutualColumns(tableKey);
+    // Write new tableCfg into tableCfgs table
+    this._insertTableCfg(newTableCfg);
 
-    // this._db
-    //   .prepare(SQL.fillTable(tableKey, mutualColumns.join(', ')))
-    //   .run();
+    // Add new columns to the table
+    const alter = sql.alterTable(tableKey, addedColumns);
+    this._db.prepare(alter).run();
   }
 
   // ...........................................................................
@@ -366,8 +370,13 @@ export class IoSqlite implements Io {
         const type = columnTypes[colNum] as JsonValueType;
         const val = row[keyWithSuffix];
 
+        // Null or undefined values are ignored
+        // and not added to the converted row
         if (val === undefined) {
-          convertedRow[key] = null;
+          continue;
+        }
+
+        if (val === null) {
           continue;
         }
 
@@ -444,18 +453,20 @@ export class IoSqlite implements Io {
 
     const parsedReturnData = this._parseData(returnData, tableCfg);
 
-    const tableCfgHash = 'aa';
-    const generalHash = 'aad';
+    const tableCfgHash = tableCfg._hash as string;
     const tableType = (await this._tableType(request.table)) as ContentType;
     const table: TableType = {
       _data: parsedReturnData as any,
       _type: tableType,
       _tableCfg: tableCfgHash,
-      _hash: generalHash,
+      _hash: '',
     };
     returnFile[request.table] = table;
 
-    return returnFile;
+    return hip(returnFile, {
+      throwOnWrongHashes: false,
+      updateExistingHashes: false,
+    });
   }
 
   // ...........................................................................
@@ -464,6 +475,9 @@ export class IoSqlite implements Io {
     const hashedData = hsh(request.data);
     const errorStore = new Map<number, string>();
     let errorCount = 0;
+
+    await this._ioTools.throwWhenTablesDoNotExist(request.data);
+    await this._ioTools.throwWhenTableDataDoesNotMatchCfg(request.data);
 
     // Loop through the tables in the data
     await iterateTables(hashedData, async (tableName, tableData) => {

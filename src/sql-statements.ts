@@ -13,7 +13,7 @@
 
 import { IoTools } from '@rljson/io';
 import { JsonValueType } from '@rljson/json';
-import { TableCfg } from '@rljson/rljson';
+import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
@@ -253,6 +253,20 @@ export class SqlStatements {
     //return `CREATE TABLE ${sqltableKey} (${sqlCreateColumns})`;
   }
 
+  static alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string {
+    const tableKeyWithSuffix = this.addTableSuffix(tableKey);
+    const statements: string[] = [];
+    for (const col of addedColumns) {
+      const columnKey = this.addColumnSuffix(col.key);
+      const columnType = this.jsonToSqlType(col.type);
+      statements.push(
+        `ALTER TABLE ${tableKeyWithSuffix} ADD COLUMN ${columnKey} ${columnType};`,
+      );
+    }
+
+    return statements.join('\n');
+  }
+
   static get createTableCfgsTable() {
     return this.createTable(IoTools.tableCfgsTableCfg);
   }
@@ -260,13 +274,17 @@ export class SqlStatements {
   static get currentTableCfgs() {
     // TODO: Muss dynamisch generiert werden aus IoTools.tableCfgsTableCfg
 
-    return `SELECT _hash, version${this.suffix.col}, key${this.suffix.col}, type${this.suffix.col}, columns${this.suffix.col}, previous${this.suffix.col}
-     FROM tableCfgs${this.suffix.tbl} t1
-      WHERE version${this.suffix.col} = (
-        SELECT MAX(version${this.suffix.col})
-        FROM tableCfgs${this.suffix.tbl} t2
-        WHERE t1.key${this.suffix.col} = t2.key${this.suffix.col} AND t1.type${this.suffix.col} = t2.type${this.suffix.col}
-      )`;
+    const result = [
+      `SELECT _hash, version${this.suffix.col}, key${this.suffix.col}, type${this.suffix.col}, columns${this.suffix.col}, previous${this.suffix.col}`,
+      `FROM tableCfgs${this.suffix.tbl} t1`,
+      `WHERE version${this.suffix.col} = (`,
+      `  SELECT MAX(version${this.suffix.col})`,
+      `  FROM tableCfgs${this.suffix.tbl} t2`,
+      `  WHERE t1.key${this.suffix.col} = t2.key${this.suffix.col} AND t1.type${this.suffix.col} = t2.type${this.suffix.col}`,
+      `)`,
+    ];
+
+    return result.join('\n');
   }
 
   static get currentTableCfg() {

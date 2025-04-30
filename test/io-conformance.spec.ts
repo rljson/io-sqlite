@@ -6,14 +6,20 @@
 
 import { hip, rmhsh } from '@rljson/hash';
 import { Io, IoMem, IoTools } from '@rljson/io';
-import { exampleTableCfg, IngredientsTable, Rljson, TableCfg, TableType } from '@rljson/rljson';
+import {
+  addColumnsToTableCfg,
+  exampleTableCfg,
+  IngredientsTable,
+  Rljson,
+  TableCfg,
+  TableType,
+} from '@rljson/rljson';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
-
 
 export const runIoConformanceTests = (
   createIo: () => Promise<Io> = async () => IoMem.example(),
@@ -55,42 +61,38 @@ export const runIoConformanceTests = (
     describe('tableCfgs()', () => {
       it('returns an rljson object containing the newest config for each table', async () => {
         //create four tables with two versions each
-        const table0V1: TableCfg = {
+        const tableV0: TableCfg = {
           key: 'table0',
           type: 'ingredients',
           isHead: false,
           isRoot: false,
           isShared: true,
-          version: 1,
           columns: [
             { key: '_hash', type: 'string' },
             { key: 'col0', type: 'string' },
-            { key: 'col1', type: 'string' },
-            { key: 'col2', type: 'string' },
           ],
         };
 
-        await io.createOrExtendTable({ tableCfg: table0V1 });
-        const table0V2 = { ...table0V1, version: 2 };
-        await io.createOrExtendTable({ tableCfg: table0V2 });
-        const table1V1 = { ...table0V1, key: 'table1', version: 1 };
-        await io.createOrExtendTable({ tableCfg: table1V1 });
-        const table1V2 = { ...table1V1, version: 2 };
-        await io.createOrExtendTable({ tableCfg: table1V2 });
+        const tableV1 = addColumnsToTableCfg(tableV0, [
+          { key: 'col1', type: 'string' },
+        ]);
+
+        const tableV2 = addColumnsToTableCfg(tableV1, [
+          { key: 'col2', type: 'string' },
+        ]);
+
+        await io.createOrExtendTable({ tableCfg: tableV0 });
+        await io.createOrExtendTable({ tableCfg: tableV1 });
+        await io.createOrExtendTable({ tableCfg: tableV2 });
 
         // Check the tableCfgs
         const actualTableCfgs = (await io.tableCfgs()).tableCfgs
           ._data as unknown as TableCfg[];
 
-        expect(actualTableCfgs.length).toBe(4);
+        expect(actualTableCfgs.length).toBe(3);
         expect((actualTableCfgs[0] as TableCfg).key).toBe('tableCfgs');
-        expect((actualTableCfgs[0] as TableCfg).version).toBe(1);
         expect((actualTableCfgs[1] as TableCfg).key).toBe('revisions');
-        expect((actualTableCfgs[1] as TableCfg).version).toBe(1);
         expect((actualTableCfgs[2] as TableCfg).key).toBe('table0');
-        expect((actualTableCfgs[2] as TableCfg).version).toBe(2);
-        expect((actualTableCfgs[3] as TableCfg).key).toBe('table1');
-        expect((actualTableCfgs[3] as TableCfg).version).toBe(2);
       });
     });
 
@@ -106,7 +108,7 @@ export const runIoConformanceTests = (
         }
 
         expect(message).toBe(
-          'Hash "wrongHash" does not match the newly calculated one "mFdDpiYMieGfvYkrz5R-Id". ' +
+          'Hash "wrongHash" does not match the newly calculated one "LM5fm8eNChH3kE3D38X0Fa". ' +
             'Please make sure that all systems are producing the same hashes.',
         );
       });
@@ -262,6 +264,21 @@ export const runIoConformanceTests = (
         ]);
       });
 
+      it('should do nothing when the columns do not have changed', async () => {
+        const exampleCfg: TableCfg = exampleTableCfg({ key: 'tableA' });
+        await io.createOrExtendTable({ tableCfg: exampleCfg });
+
+        // Check state before
+        const dumpBefore = await io.dumpTable({ table: 'tableA' });
+
+        // Add same table config again
+        await io.createOrExtendTable({ tableCfg: exampleCfg });
+
+        // Dump again, should be the same
+        const dumpAfter = await io.dumpTable({ table: 'tableA' });
+        expect(dumpBefore).toEqual(dumpAfter);
+      });
+
       it('should extend an existing table', async () => {
         // Create a first table
         const tableCfg: TableCfg = exampleTableCfg({ key: 'tableA' });
@@ -270,50 +287,51 @@ export const runIoConformanceTests = (
           data: {
             tableA: {
               _type: 'ingredients',
-              _data: [{ keyA2: 'a2' }],
+              _data: [{ a: 'hello', b: 5 }],
             },
           },
         });
 
         // Check the table content before
         const dump = rmhsh(await io.dumpTable({ table: 'tableA' }));
-        expect(dump).toEqual({
+        const dumpExpected = {
           tableA: {
             _data: [
               {
-                keyA2: 'a2',
+                a: 'hello',
+                b: 5,
               },
             ],
             _type: 'ingredients',
-            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
+            _tableCfg: 'MfpwQygnDmu3ISp6dBjsEf',
           },
-        });
+        };
+        expect(dump).toEqual(dumpExpected);
 
         // Update the table by adding a new column
-        const tableCfg2: TableCfg = {
-          ...tableCfg,
-          columns: [
-            ...tableCfg.columns,
-            { key: 'keyA1', type: 'string' },
-            { key: 'keyA2', type: 'string' },
-            { key: 'keyB2', type: 'string' },
-          ],
-        };
+        const tableCfg2 = addColumnsToTableCfg(tableCfg, [
+          { key: 'keyA1', type: 'string' },
+          { key: 'keyA2', type: 'string' },
+          { key: 'keyB2', type: 'string' },
+        ]);
+
         await io.createOrExtendTable({ tableCfg: tableCfg2 });
 
-        // Check the table contents after. It has not changed.
+        // Check the table contents after.
         const dump2 = rmhsh(await io.dumpTable({ table: 'tableA' }));
-        expect(dump2).toEqual({
+
+        // Only the hash of the table config has changed
+        expect(dump.tableA._tableCfg).not.toEqual(dump2.tableA._tableCfg);
+
+        const dumpExpected2 = {
+          ...dumpExpected,
           tableA: {
-            _data: [
-              {
-                keyA2: 'a2',
-              },
-            ],
-            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
-            _type: 'ingredients',
+            ...dumpExpected.tableA,
+            _tableCfg: dump2.tableA._tableCfg,
           },
-        });
+        };
+
+        expect(dump2).toEqual(dumpExpected2);
 
         // Now add a new row adding
         await io.write({
@@ -331,7 +349,8 @@ export const runIoConformanceTests = (
           tableA: {
             _data: [
               {
-                keyA2: 'a2',
+                a: 'hello',
+                b: 5,
               },
               {
                 keyA1: 'a1',
@@ -339,7 +358,7 @@ export const runIoConformanceTests = (
                 keyB2: 'b2',
               },
             ],
-            _tableCfg: 'SFd5uMSBBlMZCz3SNv50h6',
+            _tableCfg: 'swD0rJhzryBIY7sfxIV8Gl',
             _type: 'ingredients',
           },
         });
@@ -444,17 +463,17 @@ export const runIoConformanceTests = (
             string: 'hello',
             number: 5,
             null: null,
-            boolean: 1, //true
-            array: '[1, 2, { a: 10 }]',
-            object: '{ a: 1, b: { c: 3 } }',
+            boolean: true,
+            array: [1, 2, { a: 10 }],
+            object: { a: 1, b: { c: 3 } },
           },
           {
             string: 'world',
             number: 6,
             null: null,
-            boolean: 1, //true
-            array: '[1, 2, { a: 10 }]',
-            object: '{ a: 1, b: 2 }',
+            boolean: true,
+            array: [1, 2, { a: 10 }],
+            object: { a: 1, b: 2 },
           },
         ];
 
@@ -514,17 +533,7 @@ export const runIoConformanceTests = (
               data: {
                 tableA: {
                   _type: 'cakes',
-                  _data: [
-                    {
-                      keyB2: 'b2',
-                      sliceIdsRow: 'xyz',
-                      sliceIdsTable: 'xyz',
-                      itemIds2: 'xyz',
-                      layersTable: 'xyz',
-                      layers: {},
-                      collections: 'xyz',
-                    },
-                  ],
+                  _data: [],
                 },
               },
             }),
@@ -773,8 +782,8 @@ export const runIoConformanceTests = (
             testTable: {
               _type: 'ingredients',
               _data: [
-                { a: 'value1', b: 'value2' },
-                { a: 'value3', b: 'value4' },
+                { a: 'value1', b: 2 },
+                { a: 'value3', b: 4 },
               ],
             },
           },
