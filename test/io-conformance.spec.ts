@@ -359,6 +359,7 @@ export const runIoConformanceTests = (
               },
             ],
             _tableCfg: 'swD0rJhzryBIY7sfxIV8Gl',
+            _type: 'ingredients',
           },
         });
       });

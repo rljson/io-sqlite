@@ -87,6 +87,50 @@ export class SqlStatements {
   static get tableCfgs() {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
   }
+
+  static get currentTableCfg(): string {
+    const sql: string[] = [];
+    sql.push('WITH versions AS (');
+    sql.push('SELECT _hash_col, key_col, MAX(json_each.key) AS max_val');
+    sql.push('FROM tableCfgs_tbl, json_each(columns_col)');
+    sql.push('WHERE json_each.value IS NOT NULL');
+    sql.push('AND key_col = ? GROUP BY _hash_col, key_col)');
+    sql.push('SELECT * FROM tableCfgs_tbl tt');
+    sql.push('LEFT JOIN versions ON tt._hash_col = versions._hash_col');
+    sql.push('WHERE versions.max_val = (SELECT MAX(max_val) FROM versions);');
+    return sql.join('\n');
+  }
+
+  static get currentTableCfgs(): string {
+    const sql: string[] = [];
+    sql.push('SELECT *');
+    sql.push('FROM tableCfgs_tbl');
+    sql.push('WHERE _hash_col IN (');
+    sql.push('WITH column_count AS (');
+    sql.push('SELECT');
+    sql.push('_hash_col,');
+    sql.push('key_col,');
+    sql.push('MAX(json_each.key) AS max_val');
+    sql.push('FROM tableCfgs_tbl, json_each(columns_col)');
+    sql.push('WHERE json_each.value IS NOT NULL');
+    sql.push('GROUP BY _hash_col, key_col');
+    sql.push('),');
+    sql.push('max_tables AS (');
+    sql.push('SELECT key_col, MAX(max_val) AS newest');
+    sql.push('FROM column_count');
+    sql.push('GROUP BY key_col');
+    sql.push(')');
+    sql.push('SELECT');
+    sql.push('cc._hash_col');
+    sql.push('FROM column_count cc');
+    sql.push('LEFT JOIN max_tables mt');
+    sql.push('ON cc.key_col = mt.key_col');
+    sql.push('AND cc.max_val = mt.newest');
+    sql.push('WHERE mt.newest IS NOT NULL');
+    sql.push(');');
+    return sql.join('\n');
+  }
+
   static addColumnSuffix(name: string): string {
     return this.addFix(name, this.suffix.col);
   }
@@ -277,33 +321,6 @@ export class SqlStatements {
 
   static get createTableCfgsTable() {
     return this.createTable(IoTools.tableCfgsTableCfg);
-  }
-
-  static get currentTableCfgs() {
-    // TODO: Muss dynamisch generiert werden aus IoTools.tableCfgsTableCfg
-
-    const result = [
-      `SELECT _hash, version${this.suffix.col}, key${this.suffix.col}, type${this.suffix.col}, columns${this.suffix.col}, previous${this.suffix.col}`,
-      `FROM tableCfgs${this.suffix.tbl} t1`,
-      `WHERE version${this.suffix.col} = (`,
-      `  SELECT MAX(version${this.suffix.col})`,
-      `  FROM tableCfgs${this.suffix.tbl} t2`,
-      `  WHERE t1.key${this.suffix.col} = t2.key${this.suffix.col} AND t1.type${this.suffix.col} = t2.type${this.suffix.col}`,
-      `)`,
-    ];
-
-    return result.join('\n');
-  }
-
-  static get currentTableCfg() {
-    return `SELECT _hash, version${this.suffix.col}, key${this.suffix.col}, type${this.suffix.col}, columns${this.suffix.col}, previous${this.suffix.col}
-     FROM tableCfgs${this.suffix.tbl} t1
-      WHERE version${this.suffix.col} = (
-        SELECT MAX(version${this.suffix.col})
-        FROM tableCfgs${this.suffix.tbl} t2
-        WHERE t1.key${this.suffix.col} = t2.key${this.suffix.col} AND t1.type${this.suffix.col} = t2.type${this.suffix.col}
-        AND t1.key${this.suffix.col} = ?
-      )`;
   }
 
   static get tableTypeCheck() {

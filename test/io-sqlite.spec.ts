@@ -6,8 +6,8 @@
 
 import { TableCfg } from '@rljson/rljson';
 
-import { existsSync } from 'fs';
-import { rmdir } from 'fs/promises';
+import * as fs from 'fs';
+import { rm, writeFile } from 'fs/promises';
 import { dirname } from 'path';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -24,8 +24,8 @@ describe('IoSqlite', () => {
     // Delete existing database
     dbFilePath = await IoSqlite.exampleDbFilePath('io-sqlite-test');
     dbPath = dirname(dbFilePath);
-    if (existsSync(dbPath)) {
-      await rmdir(dbPath, { recursive: true });
+    if (fs.existsSync(dbPath)) {
+      await rm(dbPath, { recursive: true });
     }
 
     // Create new database
@@ -37,12 +37,12 @@ describe('IoSqlite', () => {
   describe('deleteDatabase', () => {
     it('should delete the database', async () => {
       // Check if the database file exists
-      expect(existsSync(dbFilePath)).toBe(true);
+      expect(fs.existsSync(dbFilePath)).toBe(true);
 
       // Delete the database
       await testDb.deleteDatabase();
       // Check if the database file exists
-      expect(existsSync(dbFilePath)).toBe(false);
+      expect(fs.existsSync(dbFilePath)).toBe(false);
     });
   });
 
@@ -51,16 +51,39 @@ describe('IoSqlite', () => {
     expect(ioSqlite).toBeDefined();
   });
 
-  describe('creation and retrieval (timing-problem!!)', () => {
+  describe('creation and retrieval (timing-problem!!)', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
+    //await testDb.isReady();
     it('should return all tables', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
+
       // Execute example
       const contentOfTables = await testDb.dump();
-      await expectGolden('io-sqlite/db-content.json').toBe(contentOfTables);
+
+      await writeFile(
+        `C:/Users/Balzer/VSCode_dev/io-sqlite/test/goldens/io-sqlite/db-content2.json`,
+        JSON.stringify(contentOfTables, null, 2),
+      );
+      await expectGolden('io-sqlite/db-content2.json').toBe(contentOfTables);
     });
   });
 
-  describe('create table', () => {
+  describe('create table', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
+    it('should wait until the database is not consumed by other processes', async () => {
+      let isReady = false;
+      while (!isReady) {
+        try {
+          await testDb.isReady();
+          isReady = true;
+        } catch (error) {
+          console.log(error.message);
+          await new Promise((resolve) => setTimeout(resolve, 500)); // Retry after a short delay
+        }
+      }
+    });
     it('should create a table', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
       // Execute example
       const tableCfg: TableCfg = {
         key: 'table1',

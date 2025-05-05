@@ -9,13 +9,7 @@ import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
-  ColumnCfg,
-  ContentType,
-  iterateTables,
-  Rljson,
-  TableCfg,
-  TableKey,
-  TableType,
+  ColumnCfg, ContentType, iterateTables, Rljson, TableCfg, TableKey, TableType
 } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
@@ -25,6 +19,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 import { SqlStatements as sql } from './sql-statements.ts';
+
 
 type DBType = Database.Database;
 
@@ -134,7 +129,7 @@ export class IoSqlite implements Io {
     const result: Rljson = {};
     const tableCfg = IoTools.tableCfgsTableCfg;
 
-    const returnValue = this._db.prepare(sql.tableCfgs).all() as Json[];
+    const returnValue = this._db.prepare(sql.currentTableCfgs).all() as Json[];
     const parsedReturnValue = this._parseData(returnValue, tableCfg);
 
     const ownCfg = parsedReturnValue.find(
@@ -151,7 +146,9 @@ export class IoSqlite implements Io {
 
   // ...........................................................................
   private async _tableCfg(tableName: string): Promise<TableCfg> {
-    const returnValue = this._db.prepare(sql.tableCfg).get(tableName) as any;
+    const returnValue = this._db
+      .prepare(sql.currentTableCfg)
+      .get(tableName) as any;
     const returnCfg = this._parseData(
       [returnValue],
       IoTools.tableCfgsTableCfg,
