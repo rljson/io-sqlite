@@ -7,8 +7,7 @@
 import { TableCfg } from '@rljson/rljson';
 
 import * as fs from 'fs';
-import { rm, writeFile } from 'fs/promises';
-import { dirname } from 'path';
+import { writeFile } from 'fs/promises';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
@@ -16,33 +15,26 @@ import { IoSqlite } from '../src/io-sqlite';
 import { expectGolden } from './setup/goldens';
 
 describe('IoSqlite', () => {
-  let dbPath: string;
-  let dbFilePath: string;
   let testDb: IoSqlite;
 
   beforeEach(async () => {
-    // Delete existing database
-    dbFilePath = await IoSqlite.exampleDbFilePath('io-sqlite-test');
-    dbPath = dirname(dbFilePath);
-    if (fs.existsSync(dbPath)) {
-      await rm(dbPath, { recursive: true });
-    }
-
     // Create new database
-    testDb = await IoSqlite.example('io-sqlite-test');
+    testDb = await IoSqlite.example();
+    // testDb = await IoSqlite.example('io-sqlite-test');
     await testDb.init();
     await testDb.isReady();
   });
 
   describe('deleteDatabase', () => {
     it('should delete the database', async () => {
+      const filePath: fs.PathLike = testDb.currentPath;
       // Check if the database file exists
-      expect(fs.existsSync(dbFilePath)).toBe(true);
+      expect(fs.existsSync(filePath)).toBe(true);
 
       // Delete the database
       await testDb.deleteDatabase();
       // Check if the database file exists
-      expect(fs.existsSync(dbFilePath)).toBe(false);
+      expect(fs.existsSync(filePath)).toBe(false);
     });
   });
 

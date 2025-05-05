@@ -17,7 +17,6 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
-
 export class SqlStatements {
   /// simple  keywords and statements*******************
   static connectingColumn: string = '_hash';
@@ -89,45 +88,47 @@ export class SqlStatements {
   }
 
   static get currentTableCfg(): string {
-    const sql: string[] = [];
-    sql.push('WITH versions AS (');
-    sql.push('SELECT _hash_col, key_col, MAX(json_each.key) AS max_val');
-    sql.push('FROM tableCfgs_tbl, json_each(columns_col)');
-    sql.push('WHERE json_each.value IS NOT NULL');
-    sql.push('AND key_col = ? GROUP BY _hash_col, key_col)');
-    sql.push('SELECT * FROM tableCfgs_tbl tt');
-    sql.push('LEFT JOIN versions ON tt._hash_col = versions._hash_col');
-    sql.push('WHERE versions.max_val = (SELECT MAX(max_val) FROM versions);');
+    const sql: string[] = [
+      'WITH versions AS (',
+      ' SELECT _hash_col, key_col, MAX(json_each.key) AS max_val',
+      ' FROM tableCfgs_tbl, json_each(columns_col)',
+      ' WHERE json_each.value IS NOT NULL',
+      ' AND key_col = ? GROUP BY _hash_col, key_col)',
+      'SELECT * FROM tableCfgs_tbl tt',
+      ' LEFT JOIN versions ON tt._hash_col = versions._hash_col',
+      ' WHERE versions.max_val = (SELECT MAX(max_val) FROM versions);',
+    ];
     return sql.join('\n');
   }
 
   static get currentTableCfgs(): string {
-    const sql: string[] = [];
-    sql.push('SELECT *');
-    sql.push('FROM tableCfgs_tbl');
-    sql.push('WHERE _hash_col IN (');
-    sql.push('WITH column_count AS (');
-    sql.push('SELECT');
-    sql.push('_hash_col,');
-    sql.push('key_col,');
-    sql.push('MAX(json_each.key) AS max_val');
-    sql.push('FROM tableCfgs_tbl, json_each(columns_col)');
-    sql.push('WHERE json_each.value IS NOT NULL');
-    sql.push('GROUP BY _hash_col, key_col');
-    sql.push('),');
-    sql.push('max_tables AS (');
-    sql.push('SELECT key_col, MAX(max_val) AS newest');
-    sql.push('FROM column_count');
-    sql.push('GROUP BY key_col');
-    sql.push(')');
-    sql.push('SELECT');
-    sql.push('cc._hash_col');
-    sql.push('FROM column_count cc');
-    sql.push('LEFT JOIN max_tables mt');
-    sql.push('ON cc.key_col = mt.key_col');
-    sql.push('AND cc.max_val = mt.newest');
-    sql.push('WHERE mt.newest IS NOT NULL');
-    sql.push(');');
+    const sql: string[] = [
+      'SELECT *',
+      'FROM tableCfgs_tbl',
+      'WHERE _hash_col IN (',
+      'WITH column_count AS (',
+      'SELECT',
+      '_hash_col,',
+      'key_col,',
+      'MAX(json_each.key) AS max_val',
+      'FROM tableCfgs_tbl, json_each(columns_col)',
+      'WHERE json_each.value IS NOT NULL',
+      'GROUP BY _hash_col, key_col',
+      '),',
+      'max_tables AS (',
+      'SELECT key_col, MAX(max_val) AS newest',
+      'FROM column_count',
+      'GROUP BY key_col',
+      ')',
+      'SELECT',
+      'cc._hash_col',
+      'FROM column_count cc',
+      'LEFT JOIN max_tables mt',
+      'ON cc.key_col = mt.key_col',
+      'AND cc.max_val = mt.newest',
+      'WHERE mt.newest IS NOT NULL',
+      ');',
+    ];
     return sql.join('\n');
   }
 

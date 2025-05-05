@@ -9,17 +9,22 @@ import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
-  ColumnCfg, ContentType, iterateTables, Rljson, TableCfg, TableKey, TableType
+  ColumnCfg,
+  ContentType,
+  iterateTables,
+  Rljson,
+  TableCfg,
+  TableKey,
+  TableType,
 } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, PathLike } from 'fs';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
 import { SqlStatements as sql } from './sql-statements.ts';
-
 
 type DBType = Database.Database;
 
@@ -612,5 +617,9 @@ export class IoSqlite implements Io {
     //   .map((col) => col.trim());
 
     return mutualColumns.join(', ');
+  }
+
+  public get currentPath(): PathLike {
+    return this._dbPath as PathLike;
   }
 }
