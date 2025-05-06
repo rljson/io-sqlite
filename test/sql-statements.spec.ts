@@ -207,4 +207,47 @@ describe('SQlStatements', () => {
     const statement = SQL.currentTableCfgs;
     expect(statement).toBe(expectedQuery);
   });
+
+  test('tableCfgs generates correct query', () => {
+    const expectedQuery = SQL.tableCfgs;
+    expect(expectedQuery).toBe(`SELECT * FROM tableCfgs_tbl`);
+  });
+
+  test('allData generates correct query', () => {
+    const tableKey = 'testTable';
+    const expectedQuery = `SELECT * FROM testTable`;
+    expect(SQL.allData(tableKey)).toBe(expectedQuery);
+  });
+
+  test('tableKey', () => {
+    const expectedQuery = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
+    expect(SQL.tableKey).toBe(expectedQuery);
+  });
+
+  test('jsonToSqlType converts JSON value types to SQLite data types', () => {
+    expect(SQL.jsonToSqlType('string')).toBe('TEXT');
+    expect(SQL.jsonToSqlType('jsonArray')).toBe('TEXT');
+    expect(SQL.jsonToSqlType('json')).toBe('TEXT');
+    expect(SQL.jsonToSqlType('number')).toBe('REAL');
+    expect(SQL.jsonToSqlType('boolean')).toBe('INTEGER');
+    expect(SQL.jsonToSqlType('jsonValue')).toBe('TEXT');
+  });
+
+  test('removeColumnSuffix removes correct suffix', () => {
+    const columnNameWithSuffix = 'testColumn_col';
+    const columnNameWithoutSuffix = 'testColumn';
+    expect(SQL.removeColumnSuffix(columnNameWithSuffix)).toBe(
+      columnNameWithoutSuffix,
+    );
+  });
+
+  test('removeColumnSuffix does not modify names without suffix', () => {
+    const columnName = 'testColumn';
+    expect(SQL.removeColumnSuffix(columnName)).toBe(columnName);
+  });
+
+  test('tableTypeCheck generates correct query', () => {
+    const expectedQuery = `SELECT type_col FROM tableCfgs_tbl WHERE key_col = ?`;
+    expect(SQL.tableTypeCheck).toBe(expectedQuery);
+  });
 });

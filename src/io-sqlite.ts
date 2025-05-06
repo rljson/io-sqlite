@@ -9,13 +9,7 @@ import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
-  ColumnCfg,
-  ContentType,
-  iterateTables,
-  Rljson,
-  TableCfg,
-  TableKey,
-  TableType,
+  ColumnCfg, ContentType, iterateTables, Rljson, TableCfg, TableKey, TableType
 } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
@@ -25,6 +19,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 import { SqlStatements as sql } from './sql-statements.ts';
+
 
 type DBType = Database.Database;
 
@@ -205,19 +200,10 @@ export class IoSqlite implements Io {
 
     // Write tableCfg as first row into tableCfgs tableso
     // As this is the first row to be entered, it is entered manually
-
     const values = this._serializeRow(tableCfg, tableCfg);
 
-    try {
-      const p = this._db.prepare(sql.insertTableCfg());
-      p.run(...values);
-    } catch (error) {
-      throw new Error(
-        `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
-          tableCfg,
-        )}`,
-      );
-    }
+    const p = this._db.prepare(sql.insertTableCfg());
+    p.run(...values);
   };
 
   // ...........................................................................
@@ -248,16 +234,8 @@ export class IoSqlite implements Io {
     tableCfgHashed: TableCfg,
     request: { tableCfg: TableCfg },
   ) {
-    try {
-      this._insertTableCfg(tableCfgHashed);
-      this._db.exec(sql.createTable(request.tableCfg));
-    } catch (error) {
-      throw new Error(
-        `Failed to create tableCfgs table: ${error} - ${JSON.stringify(
-          request.tableCfg,
-        )}`,
-      );
-    }
+    this._insertTableCfg(tableCfgHashed);
+    this._db.exec(sql.createTable(request.tableCfg));
   }
 
   // ...........................................................................
@@ -299,7 +277,6 @@ export class IoSqlite implements Io {
     for (const statement of alter) {
       this._db.prepare(statement).run();
     }
-    // this._db.prepare(alter).run();
   }
 
   // ...........................................................................
@@ -310,10 +287,6 @@ export class IoSqlite implements Io {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
 
     const tableKeyWithSuffix = sql.addTableSuffix(request.table);
-    if (!this._tableExists(tableKeyWithSuffix)) {
-      throw new Error(`Table ${request.table} not found`);
-    }
-
     const tableCfg = await this._tableCfg(request.table);
 
     const whereString = this._whereString(Object.entries(request.where));
@@ -393,9 +366,6 @@ export class IoSqlite implements Io {
           case 'json':
             convertedRow[key] = JSON.parse(val as string);
             break;
-          case undefined:
-            convertedRow[key] = val;
-            break;
           case 'string':
           case 'number':
             convertedRow[key] = val;
@@ -411,6 +381,10 @@ export class IoSqlite implements Io {
     }
 
     return convertedResult;
+  }
+
+  public parseDataTest(data: Json[], tableCfg: TableCfg): Json[] {
+    return this._parseData(data, tableCfg);
   }
 
   // ...........................................................................
@@ -621,5 +595,9 @@ export class IoSqlite implements Io {
 
   public get currentPath(): PathLike {
     return this._dbPath as PathLike;
+  }
+
+  public deleteDbFile(): Promise<void> {
+    return this.deleteDatabase();
   }
 }

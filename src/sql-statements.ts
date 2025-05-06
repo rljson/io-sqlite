@@ -294,16 +294,17 @@ export class SqlStatements {
       '_hash TEXT PRIMARY KEY',
     );
 
-    // foreign keys if there are any (not yet implemented again)
-    const foreignKeys = this.tableReferences(
-      columnsCfg
-        .map((col) => col.key)
-        .filter((col) => col.endsWith(this.suffix.ref)),
-    );
-    console.log('foreignKeys', foreignKeys);
-    const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
-    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
-    //return `CREATE TABLE ${sqltableKey} (${sqlCreateColumns})`;
+    // *******************************************************************
+    // ******************foreign keys are not yet implemented*************
+    // *******************************************************************
+    // const foreignKeys = this.tableReferences(
+    //   columnsCfg
+    //     .map((col) => col.key)
+    //     .filter((col) => col.endsWith(this.suffix.ref)),
+    // );
+    // const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
+    // return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
+    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
   static alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
