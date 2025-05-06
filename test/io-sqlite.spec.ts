@@ -50,7 +50,7 @@ describe('IoSqlite', () => {
 
       // Execute example
       const contentOfTables = await ioSql.dump();
-      await expectGolden('io-sqlite/db-content2.json').toBe(contentOfTables);
+      await expectGolden('io-sqlite/db-content.json').toBe(contentOfTables);
     });
   });
 
