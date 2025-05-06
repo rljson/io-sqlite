@@ -19,17 +19,17 @@ import { refName } from './constants.ts';
 
 export class SqliteStatements {
   /// simple  keywords and statements*******************
-  static connectingColumn: string = '_hash';
-  static queryIntro: string = 'SELECT DISTINCT';
+  connectingColumn: string = '_hash';
+  queryIntro: string = 'SELECT DISTINCT';
 
   // Names for the main tables in the database
-  static tbl: { [key: string]: string } = {
+  tbl: { [key: string]: string } = {
     main: 'tableCfgs',
     revision: 'revisions',
   };
 
   /// Postfix handling for the database
-  static suffix: { [key: string]: string } = {
+  suffix: { [key: string]: string } = {
     col: '_col',
     tbl: '_tbl',
     tmp: '_tmp',
@@ -41,7 +41,7 @@ export class SqliteStatements {
    * @param dataType - The JSON value type to convert.
    * @returns - The corresponding SQLite data type.
    */
-  static jsonToSqlType(dataType: JsonValueType): string {
+  jsonToSqlType(dataType: JsonValueType): string {
     switch (dataType) {
       case 'string':
         return 'TEXT';
@@ -58,36 +58,36 @@ export class SqliteStatements {
     }
   }
 
-  static get tableKey() {
+  get tableKey() {
     return `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
   }
-  static get tableKeys() {
+  get tableKeys() {
     return `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
   }
 
-  static rowCount(tableKey: string) {
+  rowCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
   }
-  static foreignKeyList(tableKey: string) {
+  foreignKeyList(tableKey: string) {
     return `PRAGMA foreign_key_list(${tableKey})`;
   }
 
-  static allData(tableKey: string, namedColumns?: string) {
+  allData(tableKey: string, namedColumns?: string) {
     if (!namedColumns) {
       namedColumns = `*`;
     }
     return `SELECT ${namedColumns} FROM ${tableKey}`;
   }
 
-  static get tableCfg() {
+  get tableCfg() {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl} WHERE key${this.suffix.col} = ?`;
   }
 
-  static get tableCfgs() {
+  get tableCfgs() {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
   }
 
-  static get currentTableCfg(): string {
+  get currentTableCfg(): string {
     const sql: string[] = [
       'WITH versions AS (',
       ' SELECT _hash_col, key_col, MAX(json_each.key) AS max_val',
@@ -101,7 +101,7 @@ export class SqliteStatements {
     return sql.join('\n');
   }
 
-  static get currentTableCfgs(): string {
+  get currentTableCfgs(): string {
     const sql: string[] = [
       'SELECT *',
       'FROM tableCfgs_tbl',
@@ -132,37 +132,37 @@ export class SqliteStatements {
     return sql.join('\n');
   }
 
-  static addColumnSuffix(name: string): string {
+  addColumnSuffix(name: string): string {
     return this.addFix(name, this.suffix.col);
   }
 
-  static addTableSuffix(name: string): string {
+  addTableSuffix(name: string): string {
     return this.addFix(name, this.suffix.tbl);
   }
 
   // add suffix to a name in order to avoid name conflicts
-  static addFix(name: string, fix: string): string {
+  addFix(name: string, fix: string): string {
     return name.endsWith(fix) ? name : name + fix;
   }
 
-  static removeTableSuffix(name: string): string {
+  removeTableSuffix(name: string): string {
     return this.remFix(name, this.suffix.tbl);
   }
 
-  static removeColumnSuffix(name: string): string {
+  removeColumnSuffix(name: string): string {
     return this.remFix(name, this.suffix.col);
   }
 
   // remove suffix from a name in order to communicate with the outside world
-  static remFix(name: string, fix: string): string {
+  remFix(name: string, fix: string): string {
     return name.endsWith(fix) ? name.slice(0, -fix.length) : name;
   }
 
-  static joinExpression(tableKey: string, alias: string) {
+  joinExpression(tableKey: string, alias: string) {
     return `LEFT JOIN ${tableKey} AS ${alias} \n`;
   }
 
-  static get articleExists() {
+  get articleExists() {
     return (
       'SELECT cl.layer, ar.assign FROM catalogLayers cl\n' +
       'LEFT JOIN articleSets ar\n' +
@@ -170,10 +170,10 @@ export class SqliteStatements {
       'WHERE cl.winNumber = ? '
     );
   }
-  static get catalogExists() {
+  get catalogExists() {
     return 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
   }
-  static get catalogArticleTypes() {
+  get catalogArticleTypes() {
     return (
       `SELECT articleType FROM currentArticles\n` +
       `WHERE winNumber = ?\n` +
@@ -181,7 +181,7 @@ export class SqliteStatements {
     );
   }
 
-  static foreignKeyReferences(refColumnNames: string[]) {
+  foreignKeyReferences(refColumnNames: string[]) {
     return refColumnNames
       .map(
         (col: string | any[]) =>
@@ -193,7 +193,7 @@ export class SqliteStatements {
       .join(', ');
   }
 
-  static tableReferences(referenceArray: string[]): string {
+  tableReferences(referenceArray: string[]): string {
     return referenceArray
       .map(
         (col) =>
@@ -205,7 +205,7 @@ export class SqliteStatements {
       .join(', ');
   }
 
-  static insertTableCfg() {
+  insertTableCfg() {
     const columnKeys = IoTools.tableCfgsTableCfg.columns.map((col) => col.key);
     const columnKeysWithPostfix = columnKeys.map((col) =>
       this.addColumnSuffix(col),
@@ -216,19 +216,19 @@ export class SqliteStatements {
     return `INSERT INTO ${this.tbl.main}${this.suffix.tbl} ( ${columnsSql} ) VALUES (${valuesSql})`;
   }
 
-  static get tableExists() {
+  get tableExists() {
     return `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`;
   }
 
-  static get tableType() {
+  get tableType() {
     return `SELECT type${this.suffix.col} AS type FROM ${this.tbl.main}${this.suffix.col} WHERE key${this.suffix.col} = ? AND version${this.suffix.col} = (SELECT MAX(version${this.suffix.col}) FROM ${this.tbl.main}${this.suffix.col} WHERE key${this.suffix.col} = ?)`;
   }
 
-  static columnKeys(tableKey: string) {
+  columnKeys(tableKey: string) {
     return `PRAGMA table_info(${tableKey})`;
   }
 
-  static createFullTable(
+  createFullTable(
     tableKey: string,
     columnsDefinition: string,
     foreignKeys: string,
@@ -236,48 +236,48 @@ export class SqliteStatements {
     return `CREATE TABLE ${tableKey} (${columnsDefinition}, ${foreignKeys})`;
   }
 
-  static dropTable(tableKey: string) {
+  dropTable(tableKey: string) {
     return `DROP TABLE IF EXISTS ${tableKey}${this.suffix.tbl}`;
   }
 
-  static createTempTable(tableKey: string) {
+  createTempTable(tableKey: string) {
     return `CREATE TABLE ${tableKey}${this.suffix.tmp} AS SELECT * FROM ${tableKey}${this.suffix.tbl}`;
   }
 
-  static dropTempTable(tableKey: string) {
+  dropTempTable(tableKey: string) {
     return `DROP TABLE IF EXISTS ${tableKey}${this.suffix.tmp}`;
   }
 
-  static fillTable(tableKey: string, commonColumns: string) {
+  fillTable(tableKey: string, commonColumns: string) {
     // select only those columns that are in both tables
     return `INSERT INTO ${tableKey}${this.suffix.tbl} (${commonColumns}) SELECT ${commonColumns} FROM ${tableKey}${this.suffix.tmp}`;
   }
 
-  static deleteFromTable(tableKey: string, winNumber: string) {
+  deleteFromTable(tableKey: string, winNumber: string) {
     return `DELETE FROM ${tableKey} WHERE winNumber = '${winNumber}'`;
   }
 
-  static addColumn(tableKey: string, columnName: string, columnType: string) {
+  addColumn(tableKey: string, columnName: string, columnType: string) {
     return `ALTER TABLE ${tableKey} ADD COLUMN ${columnName} ${columnType}`;
   }
 
-  static selection(tableKey: string, columns: string, whereClause: string) {
+  selection(tableKey: string, columns: string, whereClause: string) {
     return `SELECT ${columns} FROM ${tableKey} WHERE ${whereClause}`;
   }
 
-  static articleSetsRefs(winNumber: string) {
+  articleSetsRefs(winNumber: string) {
     return `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '${winNumber}'`;
   }
 
-  static get insertCurrentArticles() {
+  get insertCurrentArticles() {
     return `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
   }
 
-  static currentCount(tableKey: string) {
+  currentCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
   }
 
-  static createTable(tableCfg: TableCfg): string {
+  createTable(tableCfg: TableCfg): string {
     const sqltableKey = this.addTableSuffix(tableCfg.key);
     const columnsCfg = tableCfg.columns;
 
@@ -307,7 +307,7 @@ export class SqliteStatements {
     return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
-  static alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
+  alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
     const tableKeyWithSuffix = this.addTableSuffix(tableKey);
     const statements: string[] = [];
     for (const col of addedColumns) {
@@ -321,11 +321,11 @@ export class SqliteStatements {
     return statements;
   }
 
-  static get createTableCfgsTable() {
+  get createTableCfgsTable() {
     return this.createTable(IoTools.tableCfgsTableCfg);
   }
 
-  static get tableTypeCheck() {
+  get tableTypeCheck() {
     return `SELECT type${this.suffix.col} FROM tableCfgs${this.suffix.tbl} WHERE key${this.suffix.col} = ?`;
   }
 }
