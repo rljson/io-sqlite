@@ -6,7 +6,7 @@
 // found in the LICENSE file in the root of this package.
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { SqliteStatements } from '../src/sqlite-statements';
+import { SqlStatements } from '../src/sql-statements';
 
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
@@ -16,10 +16,10 @@ import { SqliteStatements } from '../src/sqlite-statements';
 // found in the LICENSE file in the root of this package.
 
 describe('SQlStatements', () => {
-  let sql: SqliteStatements;
+  let sql: SqlStatements;
 
   beforeAll(() => {
-    sql = new SqliteStatements();
+    sql = new SqlStatements();
   });
 
   test('tableName generates correct query', () => {

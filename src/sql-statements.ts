@@ -6,8 +6,8 @@
 // found in the LICENSE file in the root of this package.
 
 //****************************************************** */
-//These sql statements are partly based on the SQLite database;
-//see https://www.sqlite.org/lang.html
+// These sql statements are partly based on the SQLite database;
+// see https://www.sqlite.org/lang.html
 // and https://www.sqlite.org/cli.html
 //****************************************************** */
 
@@ -17,7 +17,7 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
-export class SqliteStatements {
+export class SqlStatements {
   /// simple  keywords and statements*******************
   connectingColumn: string = '_hash';
   queryIntro: string = 'SELECT DISTINCT';

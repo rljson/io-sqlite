@@ -17,7 +17,7 @@ import {
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { IoSql } from '../src/io-sql.ts';
+import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens.ts';
 
@@ -836,4 +836,4 @@ export const runIoConformanceTests = (
   });
 };
 
-runIoConformanceTests(() => IoSql.example());
+runIoConformanceTests(() => IoSqlite.example());

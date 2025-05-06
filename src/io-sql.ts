@@ -18,31 +18,38 @@ import {
   TableType,
 } from '@rljson/rljson';
 
-import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, PathLike } from 'fs';
-import { mkdtemp, rm } from 'fs/promises';
+import { existsSync, mkdirSync } from 'fs';
+import { mkdtemp } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { SqliteStatements } from './sqlite-statements.ts';
-
-type DBType = Database.Database;
+import { SqlStatements } from './sql-statements.ts';
 
 export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
 
+export interface DbType {
+  prepare: (source: string) =>
+    | {
+        all: (...params: unknown[]) => unknown[];
+        get: (...params: unknown[]) => unknown;
+        run: (...params: unknown[]) => unknown;
+      }
+    | any;
+  exec: (sql: string) => DbType;
+  close: () => DbType;
+}
+
+/* v8 ignore start */
 /**
  * Sqlite implementation of the Rljson Io interface.
  */
 export class IoSql implements Io {
-  private _db!: DBType;
-  private _dbPath?: string;
-
   // ...........................................................................
   // Constructor & example
-  constructor(public dbPath: string, public readonly sql: SqliteStatements) {
-    this._dbPath = dbPath;
-    this._db = new Database(dbPath);
-  }
+  constructor(
+    protected readonly _db: DbType,
+    public readonly sql: SqlStatements,
+  ) {}
 
   async init(): Promise<void> {
     await this._init();
@@ -73,31 +80,14 @@ export class IoSql implements Io {
     return join(await this.exampleDbDir(dbDir), 'example.sqlite');
   };
 
-  /**
-   * Returns an example database
-   * @param dbDir - The directory to store the database file.
-   * If not provided, a temporary directory will be created.
-   * @param sql - The SQL statements to use.
-   * If not provided, the default SqliteStatements will be used.
-   */
-  static example = async (
-    dbDir: string | undefined = undefined,
-    sql: SqliteStatements | undefined = new SqliteStatements(),
-  ) => {
-    const tmpDb = await this.exampleDbFilePath(dbDir);
-    return new IoSql(tmpDb, sql);
-  };
-
-  async deleteDatabase() {
-    this._db.close();
-    await rm(this._dbPath as string);
-    delete this._dbPath;
-  }
-
   // ...........................................................................
   // General
   isReady() {
     return this._isReady.promise;
+  }
+
+  async close() {
+    this._db.close();
   }
 
   // ...........................................................................
@@ -605,13 +595,5 @@ export class IoSql implements Io {
     //   .map((col) => col.trim());
 
     return mutualColumns.join(', ');
-  }
-
-  public get currentPath(): PathLike {
-    return this._dbPath as PathLike;
-  }
-
-  public deleteDbFile(): Promise<void> {
-    return this.deleteDatabase();
   }
 }
