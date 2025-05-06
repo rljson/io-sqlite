@@ -4,5 +4,8 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-export * from './io-sql.ts';
-export * from './io-sqlite.ts';
+import { describe, it } from 'vitest';
+
+describe('IoSql', () => {
+  it('is tested with IoSqlite', () => {});
+});

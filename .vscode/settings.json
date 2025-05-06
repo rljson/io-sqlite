@@ -534,5 +534,8 @@
     "upate",
     "yrqcs"
   ],
-  "editor.codeLens": false
+  "editor.codeLens": false,
+  "[sql]": {
+    "editor.defaultFormatter": "dbcode.dbcode"
+  }
 }

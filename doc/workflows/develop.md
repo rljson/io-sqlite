@@ -33,19 +33,20 @@ git pull
 
 ## Set pull request title
 
-Replace `implement create table function` here and below
+Replace `Update io-conformance.spec.ts` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "implement create table function"
+node scripts/create-branch.js "Update io-conformance.spec.ts"
 ```
 
 ## Update dependencies
 
 ```bash
 pnpm update --latest
+git commit package.json pnpm-lock.yaml  -m"Update to latest dependencies"
 ```
 
 ## Develop & debug
@@ -65,7 +66,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"implement create table function"
+git commit -am"Update io-conformance.spec.ts"
 ```
 
 ## Increase version
@@ -96,7 +97,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "implement create table function" --body " "
+gh pr create --base main --title "Update io-conformance.spec.ts" --body " "
 ```
 
 ## Code review
