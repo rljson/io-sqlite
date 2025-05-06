@@ -6,7 +6,7 @@
 // found in the LICENSE file in the root of this package.
 import { describe, expect, test } from 'vitest';
 
-import { SqlStatements as SQL } from '../src/sql-statements';
+import { SqliteStatements as SQL } from '../src/sqlite-statements';
 
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation

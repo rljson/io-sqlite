@@ -9,7 +9,13 @@ import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
-  ColumnCfg, ContentType, iterateTables, Rljson, TableCfg, TableKey, TableType
+  ColumnCfg,
+  ContentType,
+  iterateTables,
+  Rljson,
+  TableCfg,
+  TableKey,
+  TableType,
 } from '@rljson/rljson';
 
 import Database from 'better-sqlite3';
@@ -18,8 +24,7 @@ import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import { SqlStatements as sql } from './sql-statements.ts';
-
+import { SqliteStatements as sql } from './sqlite-statements.ts';
 
 type DBType = Database.Database;
 

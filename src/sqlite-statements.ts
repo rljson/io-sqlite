@@ -17,7 +17,7 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
-export class SqlStatements {
+export class SqliteStatements {
   /// simple  keywords and statements*******************
   static connectingColumn: string = '_hash';
   static queryIntro: string = 'SELECT DISTINCT';
