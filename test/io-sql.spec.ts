@@ -9,37 +9,37 @@ import { TableCfg } from '@rljson/rljson';
 import * as fs from 'fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { IoSqlite } from '../src/io-sqlite';
+import { IoSql } from '../src/io-sql';
 
 import { expectGolden } from './setup/goldens';
 
-describe('IoSqlite', () => {
-  let ioSqlite: IoSqlite;
+describe('IoSql', () => {
+  let ioSql: IoSql;
 
   beforeEach(async () => {
     // Create new database
-    ioSqlite = await IoSqlite.example();
-    // testDb = await IoSqlite.example('io-sqlite-test');
-    await ioSqlite.init();
-    await ioSqlite.isReady();
+    ioSql = await IoSql.example();
+    // testDb = await IoSql.example('io-sqlite-test');
+    await ioSql.init();
+    await ioSql.isReady();
   });
 
   describe('deleteDatabase', () => {
     it('should delete the database', async () => {
-      const filePath: fs.PathLike = ioSqlite.currentPath;
+      const filePath: fs.PathLike = ioSql.currentPath;
       // Check if the database file exists
       expect(fs.existsSync(filePath)).toBe(true);
 
       // Delete the database
-      await ioSqlite.deleteDatabase();
+      await ioSql.deleteDatabase();
       // Check if the database file exists
       expect(fs.existsSync(filePath)).toBe(false);
     });
   });
 
   it('should validate a io-sqlite', () => {
-    const ioSqlite = IoSqlite.example;
-    expect(ioSqlite).toBeDefined();
+    const ioSql = IoSql.example;
+    expect(ioSql).toBeDefined();
   });
 
   describe('creation and retrieval (timing-problem!!)', async () => {
@@ -49,7 +49,7 @@ describe('IoSqlite', () => {
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
 
       // Execute example
-      const contentOfTables = await ioSqlite.dump();
+      const contentOfTables = await ioSql.dump();
       await expectGolden('io-sqlite/db-content2.json').toBe(contentOfTables);
     });
   });
@@ -60,7 +60,7 @@ describe('IoSqlite', () => {
       let isReady = false;
       while (!isReady) {
         try {
-          await ioSqlite.isReady();
+          await ioSql.isReady();
           isReady = true;
         } catch (error) {
           console.log(error.message);
@@ -93,7 +93,7 @@ describe('IoSqlite', () => {
         type: 'cakes',
         version: 1,
       };
-      await ioSqlite.createOrExtendTable({ tableCfg });
+      await ioSql.createOrExtendTable({ tableCfg });
     });
   });
 
@@ -118,7 +118,7 @@ describe('IoSqlite', () => {
         { _hash_col: 'def456', id_col: 2, name_col: 'Vanilla Cake' },
       ];
 
-      const parsedData = ioSqlite.parseDataTest(rawData, tableCfg);
+      const parsedData = ioSql.parseDataTest(rawData, tableCfg);
 
       expect(parsedData).toEqual([
         { _hash: 'abc123', id: 1, name: 'Chocolate Cake' },
@@ -147,7 +147,7 @@ describe('IoSqlite', () => {
       ];
 
       // Call the private _parseData method using a workaround
-      const parsedData = (ioSqlite as any)._parseData(rawData, tableCfg);
+      const parsedData = (ioSql as any)._parseData(rawData, tableCfg);
 
       expect(parsedData).toEqual([
         { _hash: 'abc123', id: 1 },
@@ -158,7 +158,7 @@ describe('IoSqlite', () => {
 
   describe('exampleDbDir', () => {
     it('should create a temporary directory if no directory is provided', async () => {
-      const tempDir = await IoSqlite.exampleDbDir();
+      const tempDir = await IoSql.exampleDbDir();
       expect(tempDir).toBeDefined();
       expect(fs.existsSync(tempDir)).toBe(true);
 
@@ -168,7 +168,7 @@ describe('IoSqlite', () => {
 
     it('should use the provided directory if it exists', async () => {
       const realDir: string = 'custom-PAkvWM';
-      const resultDir = await IoSqlite.exampleDbDir(realDir);
+      const resultDir = await IoSql.exampleDbDir(realDir);
 
       expect(resultDir).toBe(resultDir);
       expect(fs.existsSync(resultDir)).toBe(true);
@@ -179,7 +179,7 @@ describe('IoSqlite', () => {
 
     it('should create the provided directory if it does not exist', async () => {
       const realDir: string = 'nonexistent-dir';
-      const resultDir = await IoSqlite.exampleDbDir(realDir);
+      const resultDir = await IoSql.exampleDbDir(realDir);
 
       expect(resultDir).toBe(resultDir);
       expect(fs.existsSync(resultDir)).toBe(true);
@@ -220,11 +220,11 @@ describe('IoSqlite', () => {
         version: 1,
       };
 
-      await ioSqlite.createOrExtendTable({ tableCfg: tableCfg1 });
-      await ioSqlite.createOrExtendTable({ tableCfg: tableCfg2 });
+      await ioSql.createOrExtendTable({ tableCfg: tableCfg1 });
+      await ioSql.createOrExtendTable({ tableCfg: tableCfg2 });
 
       // Retrieve all table keys
-      const tableKeys = await ioSqlite.alltableKeys();
+      const tableKeys = await ioSql.alltableKeys();
 
       // Validate the result
       expect(tableKeys).toContain('table1');
@@ -235,7 +235,7 @@ describe('IoSqlite', () => {
 
     it('should return an empty array if no tables exist', async () => {
       // Ensure no table apart from the defaults exist
-      const tableKeys = await ioSqlite.alltableKeys();
+      const tableKeys = await ioSql.alltableKeys();
 
       // Validate the result
       expect(tableKeys).toEqual(['tableCfgs', 'revisions']);
@@ -258,10 +258,10 @@ describe('IoSqlite', () => {
         type: 'cakes',
         version: 1,
       };
-      await ioSqlite.createOrExtendTable({ tableCfg });
+      await ioSql.createOrExtendTable({ tableCfg });
 
       // Insert some rows
-      await ioSqlite.write({
+      await ioSql.write({
         data: {
           table1: {
             _data: [
@@ -282,7 +282,7 @@ describe('IoSqlite', () => {
       });
 
       // Read rows with a where clause
-      const result = await ioSqlite.readRows({
+      const result = await ioSql.readRows({
         table: 'table1',
         where: { id: 2 },
       });
@@ -312,10 +312,10 @@ describe('IoSqlite', () => {
         type: 'cakes',
         version: 1,
       };
-      await ioSqlite.createOrExtendTable({ tableCfg });
+      await ioSql.createOrExtendTable({ tableCfg });
 
       // Insert some rows
-      await ioSqlite.write({
+      await ioSql.write({
         data: {
           table1: {
             _data: [
@@ -331,7 +331,7 @@ describe('IoSqlite', () => {
       });
 
       // Read rows with a where clause that doesn't match any rows
-      const result = await ioSqlite.readRows({
+      const result = await ioSql.readRows({
         table: 'table1',
         where: { id: 99 },
       });
@@ -346,7 +346,7 @@ describe('IoSqlite', () => {
 
     it('should throw an error if the table does not exist', async () => {
       await expect(
-        ioSqlite.readRows({
+        ioSql.readRows({
           table: 'nonexistent_table',
           where: { id: 1 },
         }),

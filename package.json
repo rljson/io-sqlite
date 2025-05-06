@@ -1,7 +1,7 @@
 {
   "name": "@rljson/io-sqlite",
   "version": "0.0.9",
-  "description": "IoSqlite rljson files",
+  "description": "IoSql rljson files",
   "homepage": "https://github.com/rljson/io-sqlite",
   "bugs": "https://github.com/rljson/io-sqlite/issues",
   "private": false,

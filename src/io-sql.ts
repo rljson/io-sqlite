@@ -33,7 +33,7 @@ export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
 /**
  * Sqlite implementation of the Rljson Io interface.
  */
-export class IoSqlite implements Io {
+export class IoSql implements Io {
   private _db!: DBType;
   private _dbPath?: string;
 
@@ -85,7 +85,7 @@ export class IoSqlite implements Io {
     sql: SqliteStatements | undefined = new SqliteStatements(),
   ) => {
     const tmpDb = await this.exampleDbFilePath(dbDir);
-    return new IoSqlite(tmpDb, sql);
+    return new IoSql(tmpDb, sql);
   };
 
   async deleteDatabase() {
