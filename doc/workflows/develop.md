@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `Update io-conformance.spec.ts` here and below
+Replace `Update conformance again.ts` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "Update io-conformance.spec.ts"
+node scripts/create-branch.js "Update conformance again.ts"
 ```
 
 ## Update dependencies
@@ -66,7 +66,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"Update io-conformance.spec.ts"
+git commit -am"Update conformance again.ts"
 ```
 
 ## Increase version
@@ -97,7 +97,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "Update io-conformance.spec.ts" --body " "
+gh pr create --base main --title "Update conformance again.ts" --body " "
 ```
 
 ## Code review
