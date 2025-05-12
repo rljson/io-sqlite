@@ -287,6 +287,9 @@ export class IoSql implements Io {
     where: { [column: string]: JsonValue };
   }): Promise<Rljson> {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
+    await this._ioTools.throwWhenColumnDoesNotExist(request.table, [
+      ...Object.keys(request.where),
+    ]);
 
     const tableKeyWithSuffix = this.sql.addTableSuffix(request.table);
     const tableCfg = await this._tableCfg(request.table);

@@ -22,11 +22,11 @@ found in the LICENSE file in the root of this package.
   - [Create an account on NPM](#create-an-account-on-npm)
   - [Request access to Rljson](#request-access-to-rljson)
   - [Generate and install an access token](#generate-and-install-an-access-token)
-- [Open io-sqlite the first time](#open-io-sqlite-the-first-time)
+- [Open template-project the first time](#open-template-project-the-first-time)
   - [Create a dev and rljson folder](#create-a-dev-and-rljson-folder)
   - [Clone code](#clone-code)
   - [Configure email address and user name](#configure-email-address-and-user-name)
-  - [Open io-sqlite with Vscode](#open-io-sqlite-with-vscode)
+  - [Open template-project with Vscode](#open-template-project-with-vscode)
   - [Install recommended extensions](#install-recommended-extensions)
   - [Activate PNPM for the project](#activate-pnpm-for-the-project)
 
@@ -34,9 +34,9 @@ found in the LICENSE file in the root of this package.
 
 ### Node
 
-[Install Node on Windows](./doc/install/node-win.md)
+[Install Node on Windows](./install-node-win.md)
 
-[Install Node on Mac](./doc/install/node-mac.md)
+[Install Node on Mac](./install-node-mac.md)
 
 ### PNPM
 
@@ -218,7 +218,7 @@ Replace `your-auth-token` by your token.
 
 Now you should be able to publish package updates
 
-## Open io-sqlite the first time
+## Open template-project the first time
 
 ### Create a dev and rljson folder
 
@@ -234,7 +234,7 @@ cd rljson
 ### Clone code
 
 ```bash
-git clone https://github.com/rljson/io-sqlite.git
+git clone https://github.com/rljson/template-project.git
 ```
 
 ### Configure email address and user name
@@ -251,10 +251,10 @@ Replace `email` by your email and execute:
 git config --global user.email "email"
 ```
 
-### Open io-sqlite with Vscode
+### Open template-project with Vscode
 
 ```bash
-code io-sqlite
+code template-project
 ```
 
 ### Install recommended extensions

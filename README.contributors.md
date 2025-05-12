@@ -10,23 +10,23 @@ found in the LICENSE file in the root of this package.
 
 - [Prepare](#prepare)
 - [Develop](#develop)
-- [Tools](#tools)
-- [Superheros](#superheros)
+- [Administrate](#administrate)
+- [Fast Coding](#fast-coding)
 
 ## Prepare
 
-Read [prepare.md](doc/workflows/prepare.md)
+Read [prepare.md](doc/prepare.md)
 
 <!-- ........................................................................-->
 
 ## Develop
 
-Read [develop.md](doc/workflows/develop.md)
+Read [develop.md](doc/develop.md)
 
-## Tools
+## Administrate
 
-Read [tools.md](doc/workflows/tools.md)
+Read [create-new-repo.md](doc/create-new-repo.md)
 
-## Superheros
+## Fast Coding
 
-Read [super-hero.md](doc/workflows/super-hero.md)
+Read [fast-coding-guide.md](doc/fast-coding-guide.md)
