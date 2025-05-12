@@ -3,10 +3,13 @@
 // und Softwareentwicklung mbH. All Rights Reserved.
 //
 // Use of this source code is governed by terms that can be
+import { ColumnCfg } from '@rljson/rljson';
+
 // found in the LICENSE file in the root of this package.
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { SqlStatements } from '../src/sql-statements';
+
 
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
@@ -269,5 +272,26 @@ describe('SQlStatements', () => {
   test('tableTypeCheck generates correct query', () => {
     const expectedQuery = `SELECT type_col FROM tableCfgs_tbl WHERE key_col = ?`;
     expect(sql.tableTypeCheck).toBe(expectedQuery);
+  });
+
+  test('rowCount generates correct query', () => {
+    const tableKey = 'testTable';
+    const expectedQuery = `SELECT COUNT(*) FROM ${sql.addTableSuffix(
+      tableKey,
+    )}`;
+    expect(sql.rowCount(tableKey)).toBe(expectedQuery);
+  });
+
+  test('alterTable generates correct queries for added columns', () => {
+    const tableKey = 'testTable';
+    const addedColumns: ColumnCfg[] = [
+      { key: 'newColumn1', type: 'string' },
+      { key: 'newColumn2', type: 'number' },
+    ];
+    const expectedQueries = [
+      `ALTER TABLE testTable_tbl ADD COLUMN newColumn1_col TEXT;`,
+      `ALTER TABLE testTable_tbl ADD COLUMN newColumn2_col REAL;`,
+    ];
+    expect(sql.alterTable(tableKey, addedColumns)).toEqual(expectedQueries);
   });
 });

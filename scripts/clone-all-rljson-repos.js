@@ -6,82 +6,49 @@
  * found in the LICENSE file in the root of this package.
  */
 
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+/*
+ * @license
+ * Copyright (c) 2025 Rljson
+ *
+ * Use of this source code is governed by terms that can be
+ * found in the LICENSE file in the root of this package.
+ */
+
+import { existsSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
+import { chdir } from 'process';
 import { fileURLToPath } from 'url';
+import { gray, red } from './functions/colors.js';
+import { getRepoUrls } from './functions/get-repo-urls.js';
+import { runCommand } from './functions/run-command.js';
 
-// Get current file directory
+// Configuration
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
+const DEST_DIR = `${__dirname}/../../`;
 
-// ===== CONFIGURATION =====
-const orgName = 'rljson'; // Replace with your GitHub org
-// ==========================
+// Create destination directory if it doesn't exist
+if (!existsSync(DEST_DIR)) {
+  mkdirSync(DEST_DIR);
+}
+chdir(DEST_DIR);
 
-/**
- * Determine target directory for cloning:
- * - If current directory is a Git repo, use parent directory
- * - Otherwise, use a subfolder called 'repos'
- */
-function determineCloneDir() {
-  const currentDir = process.cwd();
-  const gitDir = path.join(currentDir, '.git');
-  const isInGitRepo =
-    fs.existsSync(gitDir) && fs.lstatSync(gitDir).isDirectory();
+const repos = await getRepoUrls();
 
-  return isInGitRepo
-    ? path.join(currentDir, '..') // Clone one level up
-    : path.join(currentDir, '.'); // Default clone dir
+if (repos.length === 0) {
+  console.log('No repositories found.');
+  process.exit(0);
 }
 
-/**
- * Run a shell command and return stdout
- */
-function run(command) {
-  return execSync(command, { encoding: 'utf-8' }).trim();
-}
-
-/**
- * Use GitHub CLI to fetch all repos of the org
- */
-function fetchRepos(org) {
-  console.log(`📦 Fetching repositories for org: ${org}`);
-  const result = run(
-    `gh repo list ${org} --limit 1000 --json nameWithOwner,sshUrl -q '.[] | .sshUrl'`,
-  );
-  return result.split('\n').filter(Boolean);
-}
-
-/**
- * Clone all repos to the target directory
- */
-function cloneRepos(repos, targetDir) {
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
-
-  for (const repoUrl of repos) {
+for (const repoUrl of repos) {
+  try {
     const repoName = repoUrl.split('/').pop().replace('.git', '');
-    const repoPath = path.join(targetDir, repoName);
-
-    if (fs.existsSync(repoPath)) {
-      console.log(`✅ Skipping existing repo: ${repoName}`);
-      continue;
+    if (!existsSync(repoName)) {
+      runCommand(`git clone "${repoUrl}"`, false, false);
+    } else {
+      console.log(gray(`${repoName} already cloned.`));
     }
-
-    console.log(`⬇️ Cloning ${repoName}...`);
-    run(`git clone ${repoUrl} "${repoPath}"`);
+  } catch (err) {
+    console.error(red(`Error while cloning ${repoUrl}:`), gray(err.message));
   }
-
-  console.log('🎉 Done!');
-}
-
-// ==== Main ====
-try {
-  const CLONE_DIR = determineCloneDir();
-  const repos = fetchRepos(orgName);
-  cloneRepos(repos, CLONE_DIR);
-} catch (err) {
-  console.error('❌ Error:', err.message);
 }

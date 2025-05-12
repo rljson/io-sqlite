@@ -7,33 +7,9 @@
  */
 
 // Import Node.js built-in module for working with child processes
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { getRepoUrls } from './functions/get-repo-urls.js';
 
-// Convert exec to return a Promise for async/await usage
-const execAsync = promisify(exec);
-
-// GitHub organization or user
-const org = 'rljson';
-
-async function listRepos() {
-  try {
-    // Use the GitHub CLI to list repositories in JSON format
-    const { stdout } = await execAsync(
-      `gh repo list ${org} --limit 1000 --json url`,
-    );
-
-    // Parse the JSON output
-    const repos = JSON.parse(stdout);
-
-    // Map to name + URL and print to console
-    repos.forEach((repo) => {
-      console.log(`${repo.url}`);
-    });
-  } catch (error) {
-    console.error('Error fetching repositories:', error.message);
-  }
+const repos = await getRepoUrls();
+for (const repo of repos) {
+  console.log(repo);
 }
-
-// Run the function
-listRepos();

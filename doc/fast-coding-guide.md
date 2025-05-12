@@ -6,11 +6,11 @@ Use of this source code is governed by terms that can be
 found in the LICENSE file in the root of this package.
 -->
 
-# Superhero Coder's Guide
+# Fast Coding Guide
 
 - [✅ Quick Open Files](#-quick-open-files)
 - [✅ Multi-Cursor Search and Replace](#-multi-cursor-search-and-replace)
-- [✅ Help Others Become Superhero Coders](#-help-others-become-superhero-coders)
+- [✅ Help Others Become Fast Coders](#-help-others-become-fast-coders)
 
 ## ✅ Quick Open Files
 
@@ -36,6 +36,6 @@ To enable case-sensitive multi-cursor selection:
 - Click the `Aa` icon to enable case sensitivity
 - Now use `Ctrl+D` for case-sensitive selection
 
-## ✅ Help Others Become Superhero Coders
+## ✅ Help Others Become Fast Coders
 
-Multiply your impact by sharing your personal superhero coding tricks with others.
+Multiply your impact by sharing your personal fast coding tricks with others.
