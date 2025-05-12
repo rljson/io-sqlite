@@ -25,7 +25,8 @@
     "prebuild": "npm run test",
     "prepublishOnly": "npm run build",
     "lint": "pnpx eslint",
-    "updateGoldens": "cross-env UPDATE_GOLDENS=true pnpm test"
+    "updateGoldens": "cross-env UPDATE_GOLDENS=true pnpm test",
+    "installConformanceTests": "node scripts/install-conformance-tests.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
