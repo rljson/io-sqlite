@@ -86,7 +86,8 @@ export class IoSql implements Io {
   }
 
   async close() {
-    this._db.close();
+    // TODO: Check: Closing the database connection after each test does break the tests
+    // this._db.close();
   }
 
   // ...........................................................................
