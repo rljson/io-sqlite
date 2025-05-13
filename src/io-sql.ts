@@ -250,6 +250,11 @@ export class IoSql implements Io {
   }
 
   // ...........................................................................
+  _addMissingHashes(rljson: Json): void {
+    hip(rljson, { updateExistingHashes: false, throwOnWrongHashes: false });
+  }
+
+  // ...........................................................................
   private async _extendTable(newTableCfg: TableCfg): Promise<void> {
     // Estimate added columns
     const tableKey = newTableCfg.key;
@@ -406,6 +411,8 @@ export class IoSql implements Io {
         tableDump[this.sql.removeTableSuffix(table.name)];
     }
 
+    this._addMissingHashes(returnFile);
+
     return returnFile;
   }
 
@@ -445,17 +452,10 @@ export class IoSql implements Io {
       _hash: '',
     };
 
-    returnFile[request.table] = hip(table, {
-      throwOnWrongHashes: false,
-      updateExistingHashes: false,
-    });
+    this._addMissingHashes(table);
+    returnFile[request.table] = table;
 
     return returnFile;
-
-    // return hip(returnFile, {
-    //   throwOnWrongHashes: false,
-    //   updateExistingHashes: false,
-    // });
   }
 
   // ...........................................................................
