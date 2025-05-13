@@ -10,7 +10,6 @@ import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
   ColumnCfg,
-  ContentType,
   iterateTables,
   Rljson,
   TableCfg,
@@ -140,7 +139,7 @@ export class IoSql implements Io {
 
     result.tableCfgs = {
       _data: parsedReturnValue,
-      _type: 'ingredients',
+      // _type: 'ingredients',
       _tableCfg: ownCfg._hash as string,
     };
     return result;
@@ -438,19 +437,25 @@ export class IoSql implements Io {
     const parsedReturnData = this._parseData(returnData, tableCfg);
 
     const tableCfgHash = tableCfg._hash as string;
-    const tableType = (await this._tableType(request.table)) as ContentType;
+    // const tableType = (await this._tableType(request.table)) as ContentType;
     const table: TableType = {
       _data: parsedReturnData as any,
-      _type: tableType,
+      // _type: tableType,
       _tableCfg: tableCfgHash,
       _hash: '',
     };
-    returnFile[request.table] = table;
 
-    return hip(returnFile, {
+    returnFile[request.table] = hip(table, {
       throwOnWrongHashes: false,
       updateExistingHashes: false,
     });
+
+    return returnFile;
+
+    // return hip(returnFile, {
+    //   throwOnWrongHashes: false,
+    //   updateExistingHashes: false,
+    // });
   }
 
   // ...........................................................................

@@ -21,7 +21,7 @@
   "type": "module",
   "scripts": {
     "build": "echo 'Please add esbuild to create builds'",
-    "test": "pnpx vitest run --coverage && pnpm run lint",
+    "test": "pnpm installConformanceTests && pnpx vitest run --coverage && pnpm run lint",
     "prebuild": "npm run test",
     "prepublishOnly": "npm run build",
     "lint": "pnpx eslint",
