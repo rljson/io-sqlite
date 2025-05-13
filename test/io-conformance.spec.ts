@@ -5,7 +5,7 @@
 // found in the LICENSE file in the root of this package.
 
 // ⚠️ DO NOT MODIFY THIS FILE DIRECTLY ⚠️
-//
+// 
 // This file is a copy of @rljson/io/test/io-conformance.spec.ts.
 //
 // To make changes, please execute the following steps:
@@ -14,8 +14,8 @@
 //   3. Submit a pull request
 //   4. Publish a the new changes to npm
 
+
 import { hip, rmhsh } from '@rljson/hash';
-import { Io, IoTestSetup, IoTools } from '@rljson/io';
 import {
   addColumnsToTableCfg,
   exampleTableCfg,
@@ -26,6 +26,8 @@ import {
 } from '@rljson/rljson';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { Io, IoTestSetup, IoTools } from '@rljson/io';
 
 import { testSetup } from './io-conformance.setup.ts';
 import { expectGolden, ExpectGoldenOptions } from './setup/goldens.ts';
@@ -595,7 +597,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: {
                     a: 1,
@@ -624,7 +625,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -648,7 +648,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -656,7 +655,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -680,7 +678,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -688,7 +685,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -715,7 +711,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -723,7 +718,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -754,7 +748,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
