@@ -16,6 +16,7 @@ class MyIoTestSetup implements IoTestSetup {
 
   async tearDown(): Promise<void> {
     await this.io.close();
+    (this.io as IoSqlite).deleteDatabase();
   }
 
   get io(): Io {
