@@ -33,7 +33,6 @@ export class IoSqlite extends IoSql {
   };
 
   async deleteDatabase() {
-    this.close();
     await rm(this._dbPath as string);
   }
 
