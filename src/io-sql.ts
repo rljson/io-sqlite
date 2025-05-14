@@ -86,7 +86,12 @@ export class IoSql implements Io {
   }
 
   async close() {
-    this._db.close();
+    try {
+      this._db.close();
+    } catch (e) {
+      // Ignore error
+      console.log('Error closing database:', e);
+    }
   }
 
   // ...........................................................................
