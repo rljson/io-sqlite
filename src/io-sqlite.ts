@@ -13,8 +13,7 @@ import { SqlStatements } from './sql-statements.ts';
 
 export class IoSqlite extends IoSql {
   constructor(private readonly _dbPath: string, sql: SqlStatements) {
-    const db = new Database(_dbPath);
-    super(db, sql);
+    super(() => Promise.resolve(new Database(_dbPath)), sql);
   }
 
   /**
@@ -29,12 +28,13 @@ export class IoSqlite extends IoSql {
     sql: SqlStatements | undefined = new SqlStatements(),
   ) => {
     const tmpDb = await this.exampleDbFilePath(dbDir);
+    console.log('Creating example database at', tmpDb);
     return new IoSqlite(tmpDb, sql);
   };
 
   async deleteDatabase() {
     try {
-      this._db.close();
+      this.db.close();
 
       await rm(this._dbPath as string);
     } catch (e) {
@@ -48,7 +48,7 @@ export class IoSqlite extends IoSql {
   }
 
   public get isOpen(): boolean {
-    return this._db.open;
+    return super.isOpen && this.db.open;
   }
 
   public dbPath(): string {

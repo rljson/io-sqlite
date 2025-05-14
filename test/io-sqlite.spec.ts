@@ -293,6 +293,7 @@ describe('IoSqlite', () => {
           _data: [
             { _hash: '7P6ACfGigO5ZC8xHbd2E7U', id: 2, name: 'Vanilla Cake' },
           ],
+          _hash: 'vCmef0Kuf4oeJdLs6fG4AX',
         },
       });
     });
@@ -340,6 +341,7 @@ describe('IoSqlite', () => {
       expect(result).toEqual({
         table1: {
           _data: [],
+          _hash: 'An2XIY8nP9xH6Lfb_Ohy6d',
         },
       });
     });
