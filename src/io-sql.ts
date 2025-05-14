@@ -36,6 +36,7 @@ export interface DbType {
     | any;
   exec: (sql: string) => DbType;
   close: () => DbType;
+  open: boolean;
 }
 
 /* v8 ignore start */
@@ -83,6 +84,16 @@ export class IoSql implements Io {
   // General
   isReady() {
     return this._isReady.promise;
+  }
+
+  private _isOpen?: boolean;
+
+  public get isOpen(): boolean {
+    return this._isOpen ?? false;
+  }
+
+  public set isOpen(value: boolean) {
+    this._isOpen = value;
   }
 
   async close() {
@@ -480,12 +491,12 @@ export class IoSql implements Io {
       // Create internal table name
       const tableKeyWithSuffix = this.sql.addTableSuffix(tableName);
 
-      // Check if table exists
-      if (!this._tableExists(tableKeyWithSuffix)) {
-        errorCount++;
-        errorStore.set(errorCount, `Table ${tableName} does not exist`);
-        return;
-      }
+      // // Check if table exists
+      // if (!this._tableExists(tableKeyWithSuffix)) {
+      //   errorCount++;
+      //   errorStore.set(errorCount, `Table ${tableName} does not exist`);
+      //   return;
+      // }
 
       for (const row of tableData._data) {
         // Prepare and run the SQL query

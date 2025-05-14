@@ -46,4 +46,12 @@ export class IoSqlite extends IoSql {
   public get currentPath(): PathLike {
     return this._dbPath as PathLike;
   }
+
+  public get isOpen(): boolean {
+    return this._db.open;
+  }
+
+  public dbPath(): string {
+    return this._dbPath;
+  }
 }

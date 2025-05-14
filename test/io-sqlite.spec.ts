@@ -163,7 +163,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(tempDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(tempDir, { recursive: true });
+      fs.rmSync(tempDir, { recursive: true });
     });
 
     it('should use the provided directory if it exists', async () => {
@@ -174,7 +174,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(resultDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(resultDir, { recursive: true });
+      fs.rmSync(resultDir, { recursive: true });
     });
 
     it('should create the provided directory if it does not exist', async () => {
@@ -185,7 +185,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(resultDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(resultDir, { recursive: true });
+      fs.rmSync(resultDir, { recursive: true });
     });
   });
 

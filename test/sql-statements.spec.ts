@@ -10,7 +10,6 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { SqlStatements } from '../src/sql-statements';
 
-
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
 // und Softwareentwicklung mbH. All Rights Reserved.
@@ -114,7 +113,7 @@ describe('SQlStatements', () => {
   });
 
   test('createMainTable generates correct query', () => {
-    const expectedQuery = `CREATE TABLE tableCfgs_tbl (_hash_col TEXT, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, previous_col TEXT, columns_col TEXT)`;
+    const expectedQuery = `CREATE TABLE tableCfgs_tbl (_hash_col TEXT PRIMARY KEY, key_col TEXT, type_col TEXT, isHead_col INTEGER, isRoot_col INTEGER, isShared_col INTEGER, previous_col TEXT, columns_col TEXT)`;
     expect(sql.createTableCfgsTable).toBe(expectedQuery);
   });
 

@@ -5,7 +5,7 @@
 // found in the LICENSE file in the root of this package.
 
 // ⚠️ DO NOT MODIFY THIS FILE DIRECTLY ⚠️
-// 
+//
 // This file is a copy of @rljson/io/test/io-conformance.spec.ts.
 //
 // To make changes, please execute the following steps:
@@ -14,8 +14,8 @@
 //   3. Submit a pull request
 //   4. Publish a the new changes to npm
 
-
 import { hip, hsh, rmhsh } from '@rljson/hash';
+import { Io, IoTestSetup, IoTools } from '@rljson/io';
 import {
   addColumnsToTableCfg,
   exampleTableCfg,
@@ -26,8 +26,6 @@ import {
 } from '@rljson/rljson';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-
-import { Io, IoTestSetup, IoTools } from '@rljson/io';
 
 import { testSetup } from './io-conformance.setup.ts';
 import { expectGolden, ExpectGoldenOptions } from './setup/goldens.ts';
@@ -59,6 +57,22 @@ export const runIoConformanceTests = () => {
     describe('isReady()', () => {
       it('should return a resolved promise', async () => {
         await io.isReady();
+      });
+    });
+
+    describe('isOpen()', () => {
+      it('should return false before init, true after and false after close', async () => {
+        const setup = testSetup();
+        await setup.init();
+
+        const io = setup.io;
+        //   expect(io.isOpen).toBe(false);
+
+        await io.init();
+        expect(io.isOpen).toBe(true);
+
+        await io.close();
+        expect(io.isOpen).toBe(false);
       });
     });
 
@@ -508,7 +522,7 @@ export const runIoConformanceTests = () => {
         expect(rowCountAfterFirstWrite).toEqual(2);
 
         // Write the same item again
-        expect(io.write({ data: testData }));
+        await io.write({ data: testData });
 
         // Nothing changes because the data is the same
         const rowCountAfterSecondWrite = await io.rowCount(tableName);
