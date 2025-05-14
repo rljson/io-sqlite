@@ -66,6 +66,22 @@ export const runIoConformanceTests = () => {
         await setup.init();
 
         const io = setup.io;
+        expect(io.isOpen).toBe(false);
+
+        await io.init();
+        expect(io.isOpen).toBe(true);
+
+        await io.close();
+        expect(io.isOpen).toBe(false);
+      });
+    });
+
+    describe('isOpen()', () => {
+      it('should return false before init, true after and false after close', async () => {
+        const setup = testSetup();
+        await setup.init();
+
+        const io = setup.io;
         //   expect(io.isOpen).toBe(false);
 
         await io.init();
