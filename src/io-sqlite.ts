@@ -11,6 +11,7 @@ import { rm } from 'fs/promises';
 import { IoSql } from './io-sql.ts';
 import { SqlStatements } from './sql-statements.ts';
 
+
 export class IoSqlite extends IoSql {
   constructor(private readonly _dbPath: string, sql: SqlStatements) {
     const db = new Database(_dbPath);
@@ -33,6 +34,7 @@ export class IoSqlite extends IoSql {
   };
 
   async deleteDatabase() {
+    this._db.close();
     await rm(this._dbPath as string);
   }
 
