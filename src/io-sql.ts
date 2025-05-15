@@ -139,40 +139,12 @@ export class IoSql implements Io {
   async tableExists(tableKey: TableKey): Promise<boolean> {
     return this._tableExists(tableKey);
   }
-
   // ...........................................................................
-  async tableCfgs(): Promise<Rljson> {
-    const result: Rljson = {};
+  async rawTableCfgs(): Promise<TableCfg[]> {
     const tableCfg = IoTools.tableCfgsTableCfg;
-
-    const returnValue = this.db
-      .prepare(this.sql.currentTableCfgs)
-      .all() as Json[];
+    const returnValue = this.db.prepare(this.sql.tableCfgs).all() as Json[];
     const parsedReturnValue = this._parseData(returnValue, tableCfg);
-
-    const ownCfg = parsedReturnValue.find(
-      (cfg) => cfg.key === 'tableCfgs',
-    ) as TableCfg;
-
-    result.tableCfgs = {
-      _data: parsedReturnValue,
-      // _type: 'ingredients',
-      _tableCfg: ownCfg._hash as string,
-    };
-    return result;
-  }
-
-  // ...........................................................................
-  private async _tableCfg(tableName: string): Promise<TableCfg> {
-    const returnValue = this.db
-      .prepare(this.sql.currentTableCfg)
-      .get(tableName) as any;
-    const returnCfg = this._parseData(
-      [returnValue],
-      IoTools.tableCfgsTableCfg,
-    ) as TableCfg[];
-
-    return returnCfg[0];
+    return parsedReturnValue as TableCfg[];
   }
 
   async alltableKeys(): Promise<string[]> {
@@ -276,9 +248,7 @@ export class IoSql implements Io {
     // Estimate added columns
     const tableKey = newTableCfg.key;
     try {
-      debugger;
       const oldTableCfg = await this._ioTools.tableCfg(tableKey);
-      debugger;
 
       const addedColumns: ColumnCfg[] = [];
       for (
@@ -319,7 +289,7 @@ export class IoSql implements Io {
     ]);
 
     const tableKeyWithSuffix = this.sql.addTableSuffix(request.table);
-    const tableCfg = await this._tableCfg(request.table);
+    const tableCfg = await this._ioTools.tableCfg(request.table);
 
     const whereString = this._whereString(Object.entries(request.where));
     const query = this.sql.selection(tableKeyWithSuffix, '*', whereString);
@@ -450,7 +420,7 @@ export class IoSql implements Io {
     const tableKeyWithSuffix = this.sql.addTableSuffix(request.table);
 
     // get table's column structure
-    const tableCfg = await this._tableCfg(request.table);
+    const tableCfg = await this._ioTools.tableCfg(request.table);
     const columnKeys = tableCfg.columns.map((col) => col.key);
     const columnKeysWithSuffix = columnKeys.map((col) =>
       this.sql.addColumnSuffix(col),
@@ -498,7 +468,7 @@ export class IoSql implements Io {
 
     // Loop through the tables in the data
     await iterateTables(hashedData, async (tableName, tableData) => {
-      const tableCfg = await this._tableCfg(tableName);
+      const tableCfg = await this._ioTools.tableCfg(tableName);
 
       // Create internal table name
       const tableKeyWithSuffix = this.sql.addTableSuffix(tableName);
@@ -617,7 +587,7 @@ export class IoSql implements Io {
   }
 
   async _tableType(tableName: string): Promise<string> {
-    const tableCfg = await this._tableCfg(
+    const tableCfg = await this._ioTools.tableCfg(
       this.sql.removeTableSuffix(tableName),
     );
     return tableCfg.type;

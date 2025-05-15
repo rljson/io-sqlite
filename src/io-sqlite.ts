@@ -28,7 +28,6 @@ export class IoSqlite extends IoSql {
     sql: SqlStatements | undefined = new SqlStatements(),
   ) => {
     const tmpDb = await this.exampleDbFilePath(dbDir);
-    console.log('Creating example database at', tmpDb);
     return new IoSqlite(tmpDb, sql);
   };
 
