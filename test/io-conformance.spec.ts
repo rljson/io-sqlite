@@ -15,11 +15,10 @@
 //   4. Publish a the new changes to npm
 
 
-import { hip, rmhsh } from '@rljson/hash';
+import { hip, hsh, rmhsh } from '@rljson/hash';
 import {
   addColumnsToTableCfg,
   exampleTableCfg,
-  IngredientsTable,
   Rljson,
   TableCfg,
   TableType,
@@ -59,6 +58,22 @@ export const runIoConformanceTests = () => {
     describe('isReady()', () => {
       it('should return a resolved promise', async () => {
         await io.isReady();
+      });
+    });
+
+    describe('isOpen()', () => {
+      it('should return false before init, true after and false after close', async () => {
+        const setup = testSetup();
+        await setup.init();
+
+        const io = setup.io;
+        expect(io.isOpen).toBe(false);
+
+        await io.init();
+        expect(io.isOpen).toBe(true);
+
+        await io.close();
+        expect(io.isOpen).toBe(false);
       });
     });
 
@@ -107,13 +122,11 @@ export const runIoConformanceTests = () => {
         await io.createOrExtendTable({ tableCfg: tableV2 });
 
         // Check the tableCfgs
-        const actualTableCfgs = (await io.tableCfgs()).tableCfgs
-          ._data as unknown as TableCfg[];
+        const actualTableCfgs = await ioTools.tableCfgs();
 
-        expect(actualTableCfgs.length).toBe(3);
-        expect((actualTableCfgs[0] as TableCfg).key).toBe('tableCfgs');
-        expect((actualTableCfgs[1] as TableCfg).key).toBe('revisions');
-        expect((actualTableCfgs[2] as TableCfg).key).toBe('table0');
+        await expectGolden('io-conformance/tableCfgs-1.json', ego).toBe(
+          actualTableCfgs,
+        );
       });
     });
 
@@ -243,10 +256,8 @@ export const runIoConformanceTests = () => {
 
       it('should add a table and a table config', async () => {
         const tablesFromConfig = async () => {
-          const tables = (await io.tableCfgs())
-            .tableCfgs as IngredientsTable<TableCfg>;
-
-          return tables._data.map((e) => e.key);
+          const tables = await ioTools.tableCfgs();
+          return tables.map((e) => e.key);
         };
 
         const physicalTables = async () => await ioTools.allTableKeys();
@@ -255,33 +266,33 @@ export const runIoConformanceTests = () => {
         await createExampleTable('table1');
 
         expect(await tablesFromConfig()).toEqual([
-          'tableCfgs',
           'revisions',
           'table',
           'table1',
+          'tableCfgs',
         ]);
         expect(await physicalTables()).toEqual([
-          'tableCfgs',
           'revisions',
           'table',
           'table1',
+          'tableCfgs',
         ]);
 
         // Create a second table
         await createExampleTable('table2');
         expect(await tablesFromConfig()).toEqual([
-          'tableCfgs',
           'revisions',
           'table',
           'table1',
           'table2',
+          'tableCfgs',
         ]);
         expect(await physicalTables()).toEqual([
-          'tableCfgs',
           'revisions',
           'table',
           'table1',
           'table2',
+          'tableCfgs',
         ]);
       });
 
@@ -508,7 +519,7 @@ export const runIoConformanceTests = () => {
         expect(rowCountAfterFirstWrite).toEqual(2);
 
         // Write the same item again
-        expect(io.write({ data: testData }));
+        await io.write({ data: testData });
 
         // Nothing changes because the data is the same
         const rowCountAfterSecondWrite = await io.rowCount(tableName);
@@ -597,7 +608,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: {
                     a: 1,
@@ -626,7 +636,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 6,
                   object: { a: 1, b: 2 },
                   string: 'world',
@@ -650,18 +659,16 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 5,
-                  object: { a: 1, b: { c: 3 } },
-                  string: 'hello',
+                  number: 6,
+                  object: { a: 1, b: 2 },
+                  string: 'world',
                 },
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 6,
-                  object: { a: 1, b: 2 },
-                  string: 'world',
+                  number: 5,
+                  object: { a: 1, b: { c: 3 } },
+                  string: 'hello',
                 },
               ],
             },
@@ -682,18 +689,16 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 5,
-                  object: { a: 1, b: { c: 3 } },
-                  string: 'hello',
+                  number: 6,
+                  object: { a: 1, b: 2 },
+                  string: 'world',
                 },
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 6,
-                  object: { a: 1, b: 2 },
-                  string: 'world',
+                  number: 5,
+                  object: { a: 1, b: { c: 3 } },
+                  string: 'hello',
                 },
               ],
             },
@@ -717,18 +722,16 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 5,
-                  object: { a: 1, b: { c: 3 } },
-                  string: 'hello',
+                  number: 6,
+                  object: { a: 1, b: 2 },
+                  string: 'world',
                 },
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
-                  number: 6,
-                  object: { a: 1, b: 2 },
-                  string: 'world',
+                  number: 5,
+                  object: { a: 1, b: { c: 3 } },
+                  string: 'hello',
                 },
               ],
             },
@@ -756,7 +759,6 @@ export const runIoConformanceTests = () => {
                 {
                   array: [1, 2, { a: 10 }],
                   boolean: true,
-                  null: null,
                   number: 5,
                   object: { a: 1, b: { c: 3 } },
                   string: 'hello',
@@ -789,6 +791,7 @@ export const runIoConformanceTests = () => {
         expect(result).toEqual({
           testTable: {
             _data: [],
+            _hash: 'An2XIY8nP9xH6Lfb_Ohy6d',
           },
         });
       });
@@ -851,13 +854,16 @@ export const runIoConformanceTests = () => {
 
     describe('dump()', () => {
       it('returns a copy of the complete database', async () => {
-        await expectGolden('io-conformance/dump/empty.json', ego).toBe(
-          await io.dump(),
-        );
+        const dump = await io.dump();
+        hsh(dump);
+
+        await expectGolden('io-conformance/dump/empty.json', ego).toBe(dump);
         await createExampleTable('table1');
         await createExampleTable('table2');
+
+        const dump2 = await io.dump();
         await expectGolden('io-conformance/dump/two-tables.json', ego).toBe(
-          await io.dump(),
+          dump2,
         );
       });
     });
@@ -874,8 +880,11 @@ export const runIoConformanceTests = () => {
           },
         });
 
+        const result = await io.dumpTable({ table: 'table1' });
+        hsh(result);
+
         await expectGolden('io-conformance/dumpTable/table1.json', ego).toBe(
-          await io.dumpTable({ table: 'table1' }),
+          result,
         );
       });
 

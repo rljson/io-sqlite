@@ -303,10 +303,11 @@ export class SqlStatements {
       .join(', ');
 
     // standard primary key - do not remove ;-)
-    const colsWithPrimaryKey = sqlCreateColumns.replace(
-      /_hash TEXT/g,
-      '_hash TEXT PRIMARY KEY',
-    );
+
+    const conKey = `${this.connectingColumn}${this.suffix.col} TEXT`;
+    const primaryKey = `${conKey} PRIMARY KEY`;
+
+    const colsWithPrimaryKey = sqlCreateColumns.replace(conKey, primaryKey);
 
     // *******************************************************************
     // ******************foreign keys are not yet implemented*************

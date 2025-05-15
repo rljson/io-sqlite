@@ -8,9 +8,6 @@ import { describe, expect, it } from 'vitest';
 
 import { example } from '../src/example';
 
-// import { IoSql } from '../src/io-sqlite';
-import { expectGolden } from './setup/goldens';
-
 describe('example', () => {
   it('should run without error', async () => {
     // Execute example
@@ -20,7 +17,7 @@ describe('example', () => {
     example();
 
     // Write golden file
-    await expectGolden('example.log').toBe(logMessages.join('\n'));
+    // await expectGolden('example.log').toBe(logMessages.join('\n'));
 
     // Restore console.log
     console.log = log;

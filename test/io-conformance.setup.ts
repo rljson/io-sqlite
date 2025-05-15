@@ -4,17 +4,19 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { Io, IoMem, IoTestSetup as IoSqlite } from '@rljson/io';
+import { Io, IoTestSetup } from '@rljson/io';
 
+import { IoSqlite } from '../src/io-sqlite';
 
 // ..............................................................................
-class MyIoTestSetup implements IoSqlite {
+class MyIoTestSetup implements IoTestSetup {
   async init(): Promise<void> {
-    this._io = await IoMem.example();
+    const sqlite = await IoSqlite.example();
+    this._io = sqlite;
   }
 
   async tearDown(): Promise<void> {
-    await this.io.close();
+    (this.io as IoSqlite).deleteDatabase();
   }
 
   get io(): Io {
