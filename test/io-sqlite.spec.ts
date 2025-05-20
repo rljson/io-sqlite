@@ -13,6 +13,7 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens';
 
+
 describe('IoSqlite', () => {
   let ioSql: IoSqlite;
 
@@ -22,6 +23,14 @@ describe('IoSqlite', () => {
     // testDb = await IoSqlite.example('io-sqlite-test');
     await ioSql.init();
     await ioSql.isReady();
+  });
+
+  describe('dbPath', () => {
+    it('should return the correct database path', () => {
+      const expectedPath = ioSql.currentPath;
+      const actualPath = ioSql.dbPath();
+      expect(actualPath).toBe(expectedPath);
+    });
   });
 
   describe('deleteDatabase', () => {
