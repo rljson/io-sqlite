@@ -17,6 +17,7 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
+
 export class SqlStatements {
   /// simple  keywords and statements*******************
   connectingColumn: string = '_hash';
@@ -87,6 +88,7 @@ export class SqlStatements {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
   }
 
+  /* v8 ignore start */
   get currentTableCfg(): string {
     const sql: string[] = [
       'WITH versions AS (',
@@ -100,6 +102,7 @@ export class SqlStatements {
     ];
     return sql.join('\n');
   }
+  /* v8 ignore end */
 
   get currentTableCfgs(): string {
     const sql: string[] = [
@@ -303,10 +306,11 @@ export class SqlStatements {
       .join(', ');
 
     // standard primary key - do not remove ;-)
-    const colsWithPrimaryKey = sqlCreateColumns.replace(
-      /_hash TEXT/g,
-      '_hash TEXT PRIMARY KEY',
-    );
+
+    const conKey = `${this.connectingColumn}${this.suffix.col} TEXT`;
+    const primaryKey = `${conKey} PRIMARY KEY`;
+
+    const colsWithPrimaryKey = sqlCreateColumns.replace(conKey, primaryKey);
 
     // *******************************************************************
     // ******************foreign keys are not yet implemented*************

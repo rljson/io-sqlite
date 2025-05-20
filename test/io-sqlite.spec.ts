@@ -13,6 +13,7 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens';
 
+
 describe('IoSqlite', () => {
   let ioSql: IoSqlite;
 
@@ -22,6 +23,14 @@ describe('IoSqlite', () => {
     // testDb = await IoSqlite.example('io-sqlite-test');
     await ioSql.init();
     await ioSql.isReady();
+  });
+
+  describe('dbPath', () => {
+    it('should return the correct database path', () => {
+      const expectedPath = ioSql.currentPath;
+      const actualPath = ioSql.dbPath();
+      expect(actualPath).toBe(expectedPath);
+    });
   });
 
   describe('deleteDatabase', () => {
@@ -163,7 +172,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(tempDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(tempDir, { recursive: true });
+      fs.rmSync(tempDir, { recursive: true });
     });
 
     it('should use the provided directory if it exists', async () => {
@@ -174,7 +183,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(resultDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(resultDir, { recursive: true });
+      fs.rmSync(resultDir, { recursive: true });
     });
 
     it('should create the provided directory if it does not exist', async () => {
@@ -185,7 +194,7 @@ describe('IoSqlite', () => {
       expect(fs.existsSync(resultDir)).toBe(true);
 
       // Clean up
-      fs.rmdirSync(resultDir, { recursive: true });
+      fs.rmSync(resultDir, { recursive: true });
     });
   });
 
@@ -293,6 +302,7 @@ describe('IoSqlite', () => {
           _data: [
             { _hash: '7P6ACfGigO5ZC8xHbd2E7U', id: 2, name: 'Vanilla Cake' },
           ],
+          _hash: 'vCmef0Kuf4oeJdLs6fG4AX',
         },
       });
     });
@@ -340,6 +350,7 @@ describe('IoSqlite', () => {
       expect(result).toEqual({
         table1: {
           _data: [],
+          _hash: 'An2XIY8nP9xH6Lfb_Ohy6d',
         },
       });
     });

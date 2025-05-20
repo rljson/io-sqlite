@@ -11,10 +11,10 @@ import { rm } from 'fs/promises';
 import { IoSql } from './io-sql.ts';
 import { SqlStatements } from './sql-statements.ts';
 
+
 export class IoSqlite extends IoSql {
   constructor(private readonly _dbPath: string, sql: SqlStatements) {
-    const db = new Database(_dbPath);
-    super(db, sql);
+    super(() => Promise.resolve(new Database(_dbPath)), sql);
   }
 
   /**
@@ -33,11 +33,20 @@ export class IoSqlite extends IoSql {
   };
 
   async deleteDatabase() {
-    this.close();
+    this.db.close();
+
     await rm(this._dbPath as string);
   }
 
   public get currentPath(): PathLike {
     return this._dbPath as PathLike;
+  }
+
+  public get isOpen(): boolean {
+    return super.isOpen && this.db.open;
+  }
+
+  public dbPath(): string {
+    return this._dbPath;
   }
 }
