@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `Update directories.js and goldens.ts` here and below
+Replace `Make sql statements available` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "Update directories.js and goldens.ts "
+node scripts/create-branch.js "Make sql statements available "
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"Update directories.js and goldens.ts "
+git commit -am"Make sql statements available "
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "Update directories.js and goldens.ts " --body " "
+gh pr create --base main --title "Make sql statements available " --body " "
 ```
 
 ## Code review
