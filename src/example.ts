@@ -4,7 +4,7 @@
 // Use of this source code is governed by terms that can be
 // found in the LICENSE file in the root of this package.
 
-import { IoSql } from './io-sql.ts';
+import { IoSqlite } from './io-sqlite.ts';
 
 export const example = () => {
   // Print methods
@@ -16,7 +16,7 @@ export const example = () => {
   // Example
   h1('IoSql.example');
   h2('Returns an instance of the io-sqlite.');
-  const example = IoSql.example;
+  const example = IoSqlite.example();
   p(JSON.stringify(example, null, 2));
 };
 
