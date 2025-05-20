@@ -8,14 +8,7 @@ import { hip, hsh } from '@rljson/hash';
 import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
-import {
-  ColumnCfg,
-  iterateTables,
-  Rljson,
-  TableCfg,
-  TableKey,
-  TableType,
-} from '@rljson/rljson';
+import { ColumnCfg, iterateTables, Rljson, TableCfg, TableKey, TableType } from '@rljson/rljson';
 
 import { existsSync, mkdirSync } from 'fs';
 import { mkdtemp } from 'fs/promises';
@@ -23,6 +16,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 import { SqlStatements } from './sql-statements.ts';
+
 
 export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
 
@@ -215,7 +209,7 @@ export class IoSql implements Io {
     if (exists.length === 0) {
       this._createTable(tableCfgHashed, request);
     } else {
-      this._extendTable(tableCfgHashed);
+      await this._extendTable(tableCfgHashed);
     }
   }
 
