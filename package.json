@@ -20,7 +20,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "echo 'Please add esbuild to create builds'",
+    "build": "pnpx vite build && tsc && node scripts/copy-readme-to-dist.js && node scripts/copy-file.js src/example.ts dist/src",
     "test": "pnpm installConformanceTests && pnpx vitest run --coverage && pnpm run lint",
     "prebuild": "npm run test",
     "prepublishOnly": "npm run build",
