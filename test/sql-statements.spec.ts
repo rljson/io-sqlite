@@ -43,10 +43,10 @@ describe('SQlStatements', () => {
   });
 
   test('tableReferences generates correct query', () => {
-    const referenceArray = ['col1', 'col2'];
-    const suffixedReferences = referenceArray.map((col) => `${col}_col`);
-    const expectedQuery = `FOREIGN KEY (col1_col) REFERENCES col1_ (_hash_col), FOREIGN KEY (col2_col) REFERENCES col2_ (_hash_col)`;
-    expect(sql.tableReferences(suffixedReferences)).toBe(expectedQuery);
+    const referenceArray = ['oneTableRef', 'otherTableRef'];
+    const expectedQuery =
+      'FOREIGN KEY (oneTableRef_col) REFERENCES oneTable_tbl (_hash_col), FOREIGN KEY (otherTableRef_col) REFERENCES otherTable_tbl (_hash_col)';
+    expect(sql.foreignKeys(referenceArray)).toBe(expectedQuery);
   });
 
   test('allTableNames generates correct query', () => {
@@ -71,13 +71,6 @@ describe('SQlStatements', () => {
 
   test('suffix for temp tables returns correct suffix', () => {
     expect(sql.suffix.tmp).toBe('_tmp');
-  });
-
-  test('tableReferences generates correct query', () => {
-    const referenceArray = ['col1', 'col2'];
-    const suffixedReferences = referenceArray.map((col) => `${col}_col`);
-    const expectedQuery = `FOREIGN KEY (col1_col) REFERENCES col1_ (_hash_col), FOREIGN KEY (col2_col) REFERENCES col2_ (_hash_col)`;
-    expect(sql.tableReferences(suffixedReferences)).toBe(expectedQuery);
   });
 
   test('joinExpression generates correct query', () => {

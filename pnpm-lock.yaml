@@ -12,8 +12,8 @@ importers:
         specifier: ^0.0.16
         version: 0.0.16
       '@rljson/io':
-        specifier: ^0.0.40
-        version: 0.0.40
+        specifier: ^0.0.41
+        version: 0.0.41
       '@rljson/is-ready':
         specifier: ^0.0.17
         version: 0.0.17
@@ -49,8 +49,8 @@ importers:
         specifier: ^9.29.0
         version: 9.29.0
       eslint-plugin-jsdoc:
-        specifier: ^51.2.2
-        version: 51.2.2(eslint@9.29.0)
+        specifier: ^51.2.3
+        version: 51.2.3(eslint@9.29.0)
       eslint-plugin-tsdoc:
         specifier: ^0.4.0
         version: 0.4.0
@@ -413,8 +413,8 @@ packages:
     resolution: {integrity: sha512-RbMQUEP4uhSTVArvRRXR73bXyQRbghuYzhzQiJyDyTsyFJiDbEcSKEyU1VYbJ3PPEu6HUklRx6ieZC0kPGDEcQ==}
     engines: {node: '>=22.14.0'}
 
-  '@rljson/io@0.0.40':
-    resolution: {integrity: sha512-u9q6BY2snotRgcJS+vfU1Kq40QG5Ztp7vtFtZwFaMBofbh+pV/BE7AqZkBq2kkasf0OYU/x/M8XRgNUyWg5Pmw==}
+  '@rljson/io@0.0.41':
+    resolution: {integrity: sha512-ZAz3rI2g7/00Tl8Is9B5iWb06v7dC4ZbLSfCY08FjmSZNldshIaQ05Wqj15zz2d+lHaCasA7lDHDOLiQ7dH+tQ==}
     engines: {node: '>=22.14.0'}
 
   '@rljson/is-ready@0.0.17':
@@ -986,8 +986,8 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  eslint-plugin-jsdoc@51.2.2:
-    resolution: {integrity: sha512-5e3VGUk3rvZ6ZuxJr5fCTVMj7TrMC80F1GbymjyUkplCbj6dXW41qX3ZzF8YULXM74cBfjnWy/nSp/I0eLl3vg==}
+  eslint-plugin-jsdoc@51.2.3:
+    resolution: {integrity: sha512-pagzxFubOih+O6XSB1D8BkDkJjF4G4/v8s9pRg4FkXQJLu0e3QJg621ayhmnhyc5mNBpp3cYCNiUyeLQs7oz7w==}
     engines: {node: '>=20.11.0'}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
@@ -2225,7 +2225,7 @@ snapshots:
       '@rljson/json': 0.0.21
       js-base64: 3.7.7
 
-  '@rljson/io@0.0.40':
+  '@rljson/io@0.0.41':
     dependencies:
       '@rljson/hash': 0.0.16
       '@rljson/is-ready': 0.0.17
@@ -2829,7 +2829,7 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
-  eslint-plugin-jsdoc@51.2.2(eslint@9.29.0):
+  eslint-plugin-jsdoc@51.2.3(eslint@9.29.0):
     dependencies:
       '@es-joy/jsdoccomment': 0.52.0
       are-docs-informative: 0.0.2
