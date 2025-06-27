@@ -10,13 +10,21 @@ import { IoSqlite } from '../src/io-sqlite';
 
 // ..............................................................................
 class MyIoTestSetup implements IoTestSetup {
-  async init(): Promise<void> {
+  async beforeAll(): Promise<void> {
+    console.log('Sqlite does not need any setup before all tests');
+  }
+
+  async beforeEach(): Promise<void> {
     const sqlite = await IoSqlite.example();
     this._io = sqlite;
   }
 
-  async tearDown(): Promise<void> {
+  async afterEach(): Promise<void> {
     (this.io as IoSqlite).deleteDatabase();
+  }
+
+  async afterAll(): Promise<void> {
+    console.log('Sqlite does not need any cleanup after all tests');
   }
 
   get io(): Io {

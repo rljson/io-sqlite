@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `Make sql statements available` here and below
+Replace `build-problem-path-module` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "Make sql statements available "
+node scripts/create-branch.js "build-problem-path-module "
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"Make sql statements available "
+git commit -am"build-problem-path-module "
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "Make sql statements available " --body " "
+gh pr create --base main --title "build-problem-path-module " --body " "
 ```
 
 ## Code review
