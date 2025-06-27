@@ -16,7 +16,6 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
-
 export class SqlStatements {
   /// simple  keywords and statements*******************
   connectingColumn: string = '_hash';
@@ -209,13 +208,14 @@ export class SqlStatements {
       .join(', ');
   }
 
-  tableReferences(referenceArray: string[]): string {
-    return referenceArray
+  foreignKeys(refColumnNames: string[]): string {
+    return refColumnNames
       .map(
         (col) =>
-          `FOREIGN KEY (${col}) REFERENCES ${col.slice(
-            0,
-            -this.suffix.ref.length,
+          `FOREIGN KEY (${col}${
+            this.suffix.col
+          }) REFERENCES ${this.addTableSuffix(
+            col.slice(0, -this.suffix.ref.length),
           )} (${this.addColumnSuffix(this.connectingColumn)})`,
       )
       .join(', ');
@@ -314,14 +314,14 @@ export class SqlStatements {
     // *******************************************************************
     // ******************foreign keys are not yet implemented*************
     // *******************************************************************
-    // const foreignKeys = this.tableReferences(
-    //   columnsCfg
-    //     .map((col) => col.key)
-    //     .filter((col) => col.endsWith(this.suffix.ref)),
-    // );
-    // const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
-    // return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
-    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
+    const foreignKeys = this.foreignKeys(
+      columnsCfg
+        .map((col) => col.key)
+        .filter((col) => col.endsWith(this.suffix.ref)),
+    );
+    const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
+    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
+    // return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
   alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {

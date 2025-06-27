@@ -8,7 +8,14 @@ import { hip, hsh } from '@rljson/hash';
 import { Io, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
-import { ColumnCfg, iterateTables, Rljson, TableCfg, TableKey, TableType } from '@rljson/rljson';
+import {
+  ColumnCfg,
+  iterateTables,
+  Rljson,
+  TableCfg,
+  TableKey,
+  TableType,
+} from '@rljson/rljson';
 
 import { existsSync, mkdirSync } from 'fs';
 import { mkdtemp } from 'fs/promises';
@@ -16,7 +23,6 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 
 import { SqlStatements } from './sql-statements.ts';
-
 
 export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
 
@@ -41,12 +47,12 @@ export class IoSql implements Io {
   // ...........................................................................
   // Constructor & example
   constructor(
-    protected readonly _ceateDb: () => Promise<DbType>,
+    protected readonly _createDb: () => Promise<DbType>,
     public readonly sql: SqlStatements,
   ) {}
 
   async init(): Promise<void> {
-    this.db = await this._ceateDb();
+    this.db = await this._createDb();
     this._isOpen = true;
     await this._init();
   }
