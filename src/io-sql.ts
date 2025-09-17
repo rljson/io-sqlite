@@ -10,8 +10,10 @@ import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
   ColumnCfg,
+  ContentType,
   iterateTables,
   Rljson,
+  RljsonTable,
   TableCfg,
   TableKey,
   TableType,
@@ -298,8 +300,9 @@ export class IoSql implements Io {
     }[];
     const convertedResult = this._parseData(returnValue, tableCfg);
 
-    const table = {
+    const table: RljsonTable<any, any> = {
       _data: convertedResult,
+      _type: tableCfg.type,
     };
 
     this._ioTools.sortTableDataAndUpdateHash(table);
@@ -441,10 +444,10 @@ export class IoSql implements Io {
     const parsedReturnData = this._parseData(returnData, tableCfg);
 
     const tableCfgHash = tableCfg._hash as string;
-    // const tableType = (await this._tableType(request.table)) as ContentType;
+    const tableType = (await this._tableType(request.table)) as ContentType;
     const table: TableType = {
       _data: parsedReturnData as any,
-      // _type: tableType,
+      _type: tableType,
       _tableCfg: tableCfgHash,
       _hash: '',
     };

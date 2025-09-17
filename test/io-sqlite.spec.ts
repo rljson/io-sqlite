@@ -13,7 +13,6 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens';
 
-
 describe('IoSqlite', () => {
   let ioSql: IoSqlite;
 
@@ -71,7 +70,7 @@ describe('IoSqlite', () => {
         try {
           await ioSql.isReady();
           isReady = true;
-        } catch (error) {
+        } catch (error: any) {
           console.log(error.message);
           await new Promise((resolve) => setTimeout(resolve, 500)); // Retry after a short delay
         }
@@ -273,6 +272,7 @@ describe('IoSqlite', () => {
       await ioSql.write({
         data: {
           table1: {
+            _type: 'components',
             _data: [
               {
                 _hash: '8aWgduyvFL4rfPHkUPfsU1',
@@ -302,7 +302,8 @@ describe('IoSqlite', () => {
           _data: [
             { _hash: '7P6ACfGigO5ZC8xHbd2E7U', id: 2, name: 'Vanilla Cake' },
           ],
-          _hash: 'vCmef0Kuf4oeJdLs6fG4AX',
+          _hash: 'DWWD-_c-s3EUgfgMu4gBaW',
+          _type: 'cakes',
         },
       });
     });
@@ -328,6 +329,7 @@ describe('IoSqlite', () => {
       await ioSql.write({
         data: {
           table1: {
+            _type: 'components',
             _data: [
               {
                 _hash: '8aWgduyvFL4rfPHkUPfsU1',
@@ -350,7 +352,8 @@ describe('IoSqlite', () => {
       expect(result).toEqual({
         table1: {
           _data: [],
-          _hash: 'An2XIY8nP9xH6Lfb_Ohy6d',
+          _hash: 'TBokqOt0CS-vORCNBj1owR',
+          _type: 'cakes',
         },
       });
     });
