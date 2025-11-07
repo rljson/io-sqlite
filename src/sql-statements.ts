@@ -84,7 +84,7 @@ export class SqlStatements {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
   }
 
-  /* v8 ignore start */
+  /* v8 ignore next -- @preserve */
   get currentTableCfg(): string {
     const sql: string[] = [
       'WITH versions AS (',
@@ -98,7 +98,6 @@ export class SqlStatements {
     ];
     return sql.join('\n');
   }
-  /* v8 ignore end */
 
   get currentTableCfgs(): string {
     const sql: string[] = [
@@ -216,19 +215,6 @@ export class SqlStatements {
       .join(', ');
   }
 
-  foreignKeys(refColumnNames: string[]): string {
-    return refColumnNames
-      .map(
-        (col) =>
-          `FOREIGN KEY (${col}${
-            this.suffix.col
-          }) REFERENCES ${this.addTableSuffix(
-            col.slice(0, -this.suffix.ref.length),
-          )} (${this.addColumnSuffix(this.connectingColumn)})`,
-      )
-      .join(', ');
-  }
-
   insertTableCfg() {
     const columnKeys = IoTools.tableCfgsTableCfg.columns.map((col) => col.key);
     const columnKeysWithPostfix = columnKeys.map((col) =>
@@ -312,24 +298,10 @@ export class SqlStatements {
       })
       .join(', ');
 
-    // standard primary key - do not remove ;-)
-
     const conKey = `${this.connectingColumn}${this.suffix.col} TEXT`;
     const primaryKey = `${conKey} PRIMARY KEY`;
-
     const colsWithPrimaryKey = sqlCreateColumns.replace(conKey, primaryKey);
-
-    // *******************************************************************
-    // ******************foreign keys are not yet implemented*************
-    // *******************************************************************
-    const foreignKeys = this.foreignKeys(
-      columnsCfg
-        .map((col) => col.key)
-        .filter((col) => col.endsWith(this.suffix.ref)),
-    );
-    const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
-    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
-    // return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
+    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
   alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
