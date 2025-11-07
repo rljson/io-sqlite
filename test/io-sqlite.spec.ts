@@ -50,7 +50,7 @@ describe('IoSqlite', () => {
     expect(ioSql).toBeDefined();
   });
 
-  describe('creation and retrieval (timing-problem!!)', async () => {
+  describe('creation and retrieval', async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000)); // Add a short delay
     //await testDb.isReady();
     it('should return all tables', async () => {
@@ -343,6 +343,18 @@ describe('IoSqlite', () => {
             titleLong: '',
             titleShort: '',
           },
+          {
+            key: 'booleanField',
+            type: 'boolean',
+            titleLong: '',
+            titleShort: '',
+          },
+          {
+            key: 'objectField',
+            type: 'json',
+            titleLong: '',
+            titleShort: '',
+          },
         ],
         type: 'cakes',
         version: 1,
@@ -356,22 +368,32 @@ describe('IoSqlite', () => {
             _type: 'components',
             _data: [
               {
-                _hash: '8aWgduyvFL4rfPHkUPfsU1',
+                _hash: 'wRPQwAYFounLVeatEH_cAo',
                 id: 1,
                 name: 'Chocolate Cake',
+                booleanField: true,
+                objectField: { a: 1, b: 2 },
               },
-              { _hash: '7P6ACfGigO5ZC8xHbd2E7U', id: 2, name: 'Vanilla Cake' },
               {
-                _hash: 'AuIghV6dqATC6pGBk5qLcJ',
+                _hash: '4kiVmrRE_4xn_ccnVZoTUw',
+                id: 2,
+                name: 'Vanilla Cake',
+                booleanField: false,
+                objectField: { c: 3, d: 4 },
+              },
+              {
+                _hash: 'qdXNvOnziifLZmiRaR7N-9',
                 id: 3,
                 name: 'Red Velvet Cake',
+                booleanField: true,
+                objectField: { e: 5, f: 6 },
               },
             ],
           },
         },
       });
 
-      // Read rows with a where clause
+      // Read rows with a where clause for a numeric field
       const result = await ioSql.readRows({
         table: 'table1',
         where: { id: 2 },
@@ -381,9 +403,74 @@ describe('IoSqlite', () => {
       expect(result).toEqual({
         table1: {
           _data: [
-            { _hash: '7P6ACfGigO5ZC8xHbd2E7U', id: 2, name: 'Vanilla Cake' },
+            {
+              _hash: '4kiVmrRE_4xn_ccnVZoTUw',
+              booleanField: false,
+              id: 2,
+              name: 'Vanilla Cake',
+              objectField: {
+                _hash: 'Qlcrmjw9mw2A86SfmSg-1Z',
+                c: 3,
+                d: 4,
+              },
+            },
           ],
-          _hash: 'DWWD-_c-s3EUgfgMu4gBaW',
+          _hash: 'G28AKVKMaLyRyR0P5_o1bV',
+          _type: 'cakes',
+        },
+      });
+      // Read rows with a where clause for a boolean field
+      const result2 = await ioSql.readRows({
+        table: 'table1',
+        where: { booleanField: false },
+      });
+
+      // Validate the result
+      expect(result2).toEqual({
+        table1: {
+          _data: [
+            {
+              _hash: '4kiVmrRE_4xn_ccnVZoTUw',
+              booleanField: false,
+              id: 2,
+              name: 'Vanilla Cake',
+              objectField: {
+                _hash: 'Qlcrmjw9mw2A86SfmSg-1Z',
+                c: 3,
+                d: 4,
+              },
+            },
+          ],
+          _hash: 'G28AKVKMaLyRyR0P5_o1bV',
+          _type: 'cakes',
+        },
+      });
+      // Read rows with a where clause for an object field
+      const result3 = await ioSql.readRows({
+        table: 'table1',
+        where: {
+          objectField: { c: 3, d: 4, _hash: 'Qlcrmjw9mw2A86SfmSg-1Z' },
+          id: 2,
+        },
+      });
+
+      // Validate the result
+      expect(result3).toEqual({
+        table1: {
+          _data: [
+            {
+              _hash: '4kiVmrRE_4xn_ccnVZoTUw',
+              booleanField: false,
+              id: 2,
+              name: 'Vanilla Cake',
+              objectField: {
+                _hash: 'Qlcrmjw9mw2A86SfmSg-1Z',
+                c: 3,
+                d: 4,
+              },
+            },
+          ],
+          _hash: 'G28AKVKMaLyRyR0P5_o1bV',
           _type: 'cakes',
         },
       });
