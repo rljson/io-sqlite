@@ -26,6 +26,7 @@ export class SqlStatements {
   tbl: { [key: string]: string } = {
     main: 'tableCfgs',
     revision: 'revisions',
+    returnCol: 'type',
   };
 
   /// Postfix handling for the database
@@ -33,7 +34,6 @@ export class SqlStatements {
     col: '_col',
     tbl: '_tbl',
     tmp: '_tmp',
-    ref: 'Ref',
   };
 
   /**
@@ -67,9 +67,6 @@ export class SqlStatements {
 
   rowCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
-  }
-  foreignKeyList(tableKey: string) {
-    return `PRAGMA foreign_key_list(${tableKey})`;
   }
 
   allData(tableKey: string, namedColumns?: string) {
@@ -195,6 +192,16 @@ export class SqlStatements {
       `WHERE winNumber = ?\n` +
       `GROUP BY articleType`
     );
+  }
+
+  contentType(tableName: string): string {
+    console.log('Generating contentType SQL for table:', tableName);
+    // const searchTable = this.addTableSuffix(tableName);
+    const sourceTable = this.addTableSuffix(this.tbl.main);
+    const resultCol = this.addColumnSuffix('type');
+    const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col = '${tableName}'`;
+    // const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col IS NOT NULL`;
+    return sql;
   }
 
   foreignKeyReferences(refColumnNames: string[]) {

@@ -11,7 +11,6 @@ import { rm } from 'fs/promises';
 import { IoSql } from './io-sql.ts';
 import { SqlStatements } from './sql-statements.ts';
 
-
 export class IoSqlite extends IoSql {
   constructor(private readonly _dbPath: string, sql: SqlStatements) {
     super(() => Promise.resolve(new Database(_dbPath)), sql);

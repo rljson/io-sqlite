@@ -52,6 +52,16 @@ export class IoSql implements Io {
     protected readonly _createDb: () => Promise<DbType>,
     public readonly sql: SqlStatements,
   ) {}
+  async contentType(request: { table: string }): Promise<ContentType> {
+    const query = this.sql.contentType(request.table);
+    const result = this.db.prepare(query).all();
+    const mappedResult = result.map((type_col: string) =>
+      typeof type_col === 'string' ? type_col : JSON.stringify(type_col),
+    );
+    const obj = JSON.parse(mappedResult[0]);
+    const type = obj.type_col; // "components"
+    return type;
+  }
 
   async init(): Promise<void> {
     this.db = await this._createDb();
