@@ -6,7 +6,7 @@
 
 import { TableCfg } from '@rljson/rljson';
 
-import * as fs from 'fs';
+// import * as fs from 'fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { IoSqlite } from '../src/io-sqlite';
@@ -19,34 +19,9 @@ describe('IoSqlite', () => {
   beforeEach(async () => {
     // Create new database
     ioSql = await IoSqlite.example();
-    // testDb = await IoSqlite.example('io-sqlite-test');
-    await ioSql.init();
-    await ioSql.isReady();
-  });
-
-  describe('dbPath', () => {
-    it('should return the correct database path', () => {
-      const expectedPath = ioSql.currentPath;
-      const actualPath = ioSql.dbPath();
-      expect(actualPath).toBe(expectedPath);
-    });
-  });
-
-  describe('deleteDatabase', () => {
-    it('should delete the database', async () => {
-      const filePath: fs.PathLike = ioSql.currentPath;
-      // Check if the database file exists
-      expect(fs.existsSync(filePath)).toBe(true);
-
-      // Delete the database
-      await ioSql.deleteDatabase();
-      // Check if the database file exists
-      expect(fs.existsSync(filePath)).toBe(false);
-    });
   });
 
   it('should validate a io-sqlite', () => {
-    const ioSql = IoSqlite.example;
     expect(ioSql).toBeDefined();
   });
 
@@ -200,38 +175,38 @@ describe('IoSqlite', () => {
     });
   });
 
-  describe('exampleDbDir', () => {
-    it('should create a temporary directory if no directory is provided', async () => {
-      const tempDir = await IoSqlite.exampleDbDir();
-      expect(tempDir).toBeDefined();
-      expect(fs.existsSync(tempDir)).toBe(true);
+  // describe('exampleDbDir', () => {
+  //   it('should create a temporary directory if no directory is provided', async () => {
+  //     const tempDir = await IoSqlite.exampleDbDir();
+  //     expect(tempDir).toBeDefined();
+  //     expect(fs.existsSync(tempDir)).toBe(true);
 
-      // Clean up
-      fs.rmSync(tempDir, { recursive: true });
-    });
+  //     // Clean up
+  //     fs.rmSync(tempDir, { recursive: true });
+  //   });
 
-    it('should use the provided directory if it exists', async () => {
-      const realDir: string = 'custom-PAkvWM';
-      const resultDir = await IoSqlite.exampleDbDir(realDir);
+  //   it('should use the provided directory if it exists', async () => {
+  //     const realDir: string = 'custom-PAkvWM';
+  //     const resultDir = await IoSqlite.exampleDbDir(realDir);
 
-      expect(resultDir).toBe(resultDir);
-      expect(fs.existsSync(resultDir)).toBe(true);
+  //     expect(resultDir).toBe(resultDir);
+  //     expect(fs.existsSync(resultDir)).toBe(true);
 
-      // Clean up
-      fs.rmSync(resultDir, { recursive: true });
-    });
+  //     // Clean up
+  //     fs.rmSync(resultDir, { recursive: true });
+  //   });
 
-    it('should create the provided directory if it does not exist', async () => {
-      const realDir: string = 'nonexistent-dir';
-      const resultDir = await IoSqlite.exampleDbDir(realDir);
+  //   it('should create the provided directory if it does not exist', async () => {
+  //     const realDir: string = 'nonexistent-dir';
+  //     const resultDir = await IoSqlite.exampleDbDir(realDir);
 
-      expect(resultDir).toBe(resultDir);
-      expect(fs.existsSync(resultDir)).toBe(true);
+  //     expect(resultDir).toBe(resultDir);
+  //     expect(fs.existsSync(resultDir)).toBe(true);
 
-      // Clean up
-      fs.rmSync(resultDir, { recursive: true });
-    });
-  });
+  //     // Clean up
+  //     fs.rmSync(resultDir, { recursive: true });
+  //   });
+  // });
 
   describe('alltableKeys', () => {
     it('should return all table keys in the database', async () => {
@@ -295,7 +270,21 @@ describe('IoSqlite', () => {
       };
 
       await ioSql.createOrExtendTable({ tableCfg: tableCfg1 });
+      const result1 = ioSql.db.exec(
+        "SELECT name FROM sqlite_master WHERE type='table'",
+      );
+      console.log(result1);
+
+      const result1Json = JSON.parse(JSON.stringify(result1));
+      console.log(`result1Json: ${JSON.stringify(result1Json)}`);
+      const tableNames = result1Json[0]?.values?.map((v: any[]) => v[0]) ?? [];
+      console.log('Extracted table names:', tableNames);
+
       await ioSql.createOrExtendTable({ tableCfg: tableCfg2 });
+      const result2 = ioSql.db.exec(
+        "SELECT name FROM sqlite_master WHERE type='table'",
+      );
+      console.log(result2);
 
       // Retrieve all table keys
       const tableKeys = await ioSql.alltableKeys();
@@ -548,6 +537,103 @@ describe('IoSqlite', () => {
           where: { id: 1 },
         }),
       ).rejects.toThrow('Table "nonexistent_table" not found');
+    });
+  });
+
+  describe('rawTableCfgs', () => {
+    it('should return the raw table configurations for all tables', async () => {
+      // Create two tables with different configs
+      const tableCfg1: TableCfg = {
+        key: 'table1',
+        isHead: false,
+        isRoot: false,
+        isShared: true,
+        columns: [
+          {
+            key: '_hash',
+            type: 'string',
+            titleLong: '',
+            titleShort: '',
+          },
+          {
+            key: 'id',
+            type: 'number',
+            titleLong: '',
+            titleShort: '',
+          },
+          {
+            key: 'name',
+            type: 'string',
+            titleLong: '',
+            titleShort: '',
+          },
+        ],
+        type: 'cakes',
+        version: 1,
+      };
+
+      const tableCfg2: TableCfg = {
+        key: 'table2',
+        isHead: false,
+        isRoot: false,
+        isShared: true,
+        columns: [
+          {
+            key: '_hash',
+            type: 'string',
+            titleLong: '',
+            titleShort: '',
+          },
+          {
+            key: 'price',
+            type: 'number',
+            titleLong: '',
+            titleShort: '',
+          },
+          {
+            key: 'description',
+            type: 'string',
+            titleLong: '',
+            titleShort: '',
+          },
+        ],
+        type: 'layers',
+        version: 1,
+      };
+
+      await ioSql.createOrExtendTable({ tableCfg: tableCfg1 });
+      await ioSql.createOrExtendTable({ tableCfg: tableCfg2 });
+
+      const rawCfgs = await ioSql.rawTableCfgs();
+
+      // Should contain at least the two created tables and the default tableCfgs table
+      const keys = rawCfgs.map((cfg) => cfg.key);
+      expect(keys).toContain('table1');
+      expect(keys).toContain('table2');
+      expect(keys).toContain('tableCfgs');
+
+      // Check that the configs match what we inserted (ignoring extra fields like _hash)
+      const table1Cfg = rawCfgs.find((cfg) => cfg.key === 'table1');
+      expect(table1Cfg).toMatchObject({
+        key: 'table1',
+        type: 'cakes',
+        version: 1,
+      });
+
+      const table2Cfg = rawCfgs.find((cfg) => cfg.key === 'table2');
+      expect(table2Cfg).toMatchObject({
+        key: 'table2',
+        type: 'layers',
+        version: 1,
+      });
+    });
+
+    it('should return only the default tableCfgs if no user tables exist', async () => {
+      // New DB, only default tableCfgs should exist
+      const rawCfgs = await ioSql.rawTableCfgs();
+      const keys = rawCfgs.map((cfg) => cfg.key);
+      expect(keys).toContain('tableCfgs');
+      expect(keys.length).toBe(1);
     });
   });
 });

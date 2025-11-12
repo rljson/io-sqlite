@@ -19,86 +19,56 @@ import {
   TableType,
 } from '@rljson/rljson';
 
-import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, PathLike } from 'fs';
-import { mkdtemp, rm } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import initSqlJs, { Database } from 'sql.js';
 
 import { SqlStatements } from './sql-statements.ts';
 
-export const exampleDbDir = join(tmpdir(), 'io-sqlite-tests');
-
-export interface DbType {
-  prepare: (source: string) =>
-    | {
-        all: (...params: unknown[]) => unknown[];
-        get: (...params: unknown[]) => unknown;
-        run: (...params: unknown[]) => unknown;
-      }
-    | any;
-  exec: (sql: string) => DbType;
-  close: () => DbType;
-  open: boolean;
-}
+const SQL = await initSqlJs();
 
 export class IoSqlite implements Io {
+  private _ioTools!: IoTools;
+  private _isReady = new IsReady();
   private _sql: SqlStatements;
-  private _createDb: (() => Promise<DbType>) | undefined;
-  constructor(private readonly _dbPath: string) {
+  constructor() {
     this._sql = new SqlStatements();
-
-    // this.db = Promise.resolve(new Database(_dbPath));
   }
 
   async init(): Promise<void> {
-    this._createDb = () => Promise.resolve(new Database(this._dbPath));
-    this.db = await this._createDb();
+    this.db = new SQL.Database();
     this._isOpen = true;
-    await this._init();
+    this._ioTools = new IoTools(this);
+    this._initTableCfgs();
+    await this._ioTools.initRevisionsTable();
+    this._isReady.resolve();
   }
 
-  public db!: DbType;
+  public db!: Database;
 
   /**
    * Returns an example database
-   * @param dbDir - The directory to store the database file.
-   * If not provided, a temporary directory will be created.
    */
-  static example = async (dbDir: string | undefined = undefined) => {
-    const tmpDb = await this.exampleDbFilePath(dbDir);
-    return new IoSqlite(tmpDb);
+  static example = async () => {
+    const ioSqlite = new IoSqlite();
+    await ioSqlite.init();
+    return ioSqlite;
   };
 
   async contentType(request: { table: string }): Promise<ContentType> {
     const query = this._sql.contentType(request.table);
-    const result = this.db.prepare(query).all();
+    const result = [this.db.prepare(query).get()];
     const mappedResult = result.map((type_col: any) =>
       JSON.stringify(type_col),
     );
     const obj = JSON.parse(mappedResult[0]);
-    const type = obj.type_col; // "components"
-    return type;
+    const typeResult = obj.type_col; // "components"
+    return typeResult as ContentType;
   }
 
   async deleteDatabase() {
+    // In-memory database, so just close it
     this.db.close();
-
-    await rm(this._dbPath as string);
+    // Maybe once there are file-based databases, delete the file here
   }
-
-  public get currentPath(): PathLike {
-    return this._dbPath as PathLike;
-  }
-
-  public dbPath(): string {
-    return this._dbPath;
-  }
-
-  // Returns an example database file
-  static exampleDbFilePath = async (dbDir: string | undefined = undefined) => {
-    return join(await this.exampleDbDir(dbDir), 'example.sqlite');
-  };
 
   // ...........................................................................
   // General
@@ -129,10 +99,11 @@ export class IoSqlite implements Io {
   async rowCount(table: string): Promise<number> {
     await this._ioTools.throwWhenTableDoesNotExist(table);
 
-    const result = this.db.prepare(this._sql.rowCount(table)).get() as {
-      'COUNT(*)': number;
-    };
-    return result['COUNT(*)'];
+    const stmt = this.db.prepare(this._sql.rowCount(table));
+    const result = stmt.get(); // as { 'COUNT(*)': number };
+    console.log('rowCount result:', result);
+    stmt.free();
+    return 0; //result['COUNT(*)'];
   }
 
   // ...........................................................................
@@ -142,15 +113,21 @@ export class IoSqlite implements Io {
   // ...........................................................................
   async rawTableCfgs(): Promise<TableCfg[]> {
     const tableCfg = IoTools.tableCfgsTableCfg;
-    const returnValue = this.db.prepare(this._sql.tableCfgs).all() as Json[];
+    const query = this._sql.contentType(this._sql.tableCfgs);
+    const result = [this.db.prepare(query).get()];
+    const returnValue = result as unknown as Json[];
+
     const parsedReturnValue = this._parseData(returnValue, tableCfg);
     return parsedReturnValue as TableCfg[];
   }
 
   async alltableKeys(): Promise<string[]> {
-    const returnValue = this.db.prepare(this._sql.tableKeys).all();
-    const tableKeys = (returnValue as { name: string }[]).map((row) =>
-      this._sql.removeTableSuffix(row.name),
+    const returnValue = this.db.exec(this._sql.tableKeys)[0].values;
+    const returnValueStr = returnValue.map((row: any) => String(row[0]));
+    console.log('Extracted table keys:', returnValueStr);
+    // remove the suffixes
+    const tableKeys = returnValueStr.map((key) =>
+      this._sql.removeTableSuffix(key),
     );
     return tableKeys;
   }
@@ -169,18 +146,6 @@ export class IoSqlite implements Io {
   // Private
   // ######################
 
-  private _isReady = new IsReady();
-  private _ioTools!: IoTools;
-
-  // ...........................................................................
-  private async _init() {
-    // Create tableCfgs table
-    this._ioTools = new IoTools(this);
-    this._initTableCfgs();
-    await this._ioTools.initRevisionsTable();
-    this._isReady.resolve();
-  }
-
   // ...........................................................................
   private _initTableCfgs = () => {
     const tableCfg = IoTools.tableCfgsTableCfg;
@@ -193,7 +158,7 @@ export class IoSqlite implements Io {
     const values = this._serializeRow(tableCfg, tableCfg);
 
     const p = this.db.prepare(this._sql.insertTableCfg());
-    p.run(...values);
+    p.run(values.map((v) => (v === undefined ? null : v)) as any[]);
   };
 
   // ...........................................................................
@@ -210,13 +175,15 @@ export class IoSqlite implements Io {
     const tableCfgHashed = hsh(request.tableCfg);
 
     // Check if table exists
-    const exists = this.db.prepare(this._sql.tableCfg).all(tableKey);
+    const stmt = this.db.prepare(this._sql.tableCfg);
+    const exists = stmt.get([tableKey]);
 
     if (exists.length === 0) {
       this._createTable(tableCfgHashed, request);
     } else {
       await this._extendTable(tableCfgHashed);
     }
+    stmt.free();
   }
 
   // ...........................................................................
@@ -235,7 +202,8 @@ export class IoSqlite implements Io {
       tableCfgHashed,
       IoTools.tableCfgsTableCfg,
     );
-    this.db.prepare(this._sql.insertTableCfg()).run(...values);
+    const p = this.db.prepare(this._sql.insertTableCfg());
+    p.run(values.map((v) => (v === undefined ? null : v)) as any[]);
   }
 
   // ...........................................................................
@@ -290,10 +258,10 @@ export class IoSqlite implements Io {
 
     const whereString = this._whereString(Object.entries(request.where));
     const query = this._sql.selection(tableKeyWithSuffix, '*', whereString);
-    const returnValue = this.db.prepare(query).all() as {
+    const returnValue = this.db.prepare(query).get() as {
       [key: string]: any;
-    }[];
-    const convertedResult = this._parseData(returnValue, tableCfg);
+    };
+    const convertedResult = this._parseData([returnValue], tableCfg);
 
     const table: RljsonTable<any, any> = {
       _data: convertedResult,
@@ -394,9 +362,9 @@ export class IoSqlite implements Io {
 
   private async _dump(): Promise<Rljson> {
     const returnFile: Rljson = {};
-    const tables = this.db.prepare(this._sql.tableKeys).all();
+    const tables = this.db.prepare(this._sql.tableKeys).get();
 
-    for (const table of tables as { name: string }[]) {
+    for (const table of tables as unknown as { name: string }[]) {
       const tableDump: Rljson = await this._dumpTable({
         table: this._sql.removeTableSuffix(table.name),
       });
@@ -413,8 +381,7 @@ export class IoSqlite implements Io {
   // ...........................................................................
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
-
-    const tableKeyWithSuffix = this._sql.addTableSuffix(request.table);
+    const tableKey = this._sql.addTableSuffix(request.table);
 
     // get table's column structure
     const tableCfg = await this._ioTools.tableCfg(request.table);
@@ -425,18 +392,16 @@ export class IoSqlite implements Io {
 
     const returnFile: Rljson = {};
     const returnData = this.db
-      .prepare(
-        this._sql.allData(tableKeyWithSuffix, columnKeysWithSuffix.join(', ')),
-      )
-      .all() as Json[];
+      .prepare(this._sql.allData(tableKey, columnKeysWithSuffix.join(', ')))
+      .get() as unknown as Json[];
 
     const parsedReturnData = this._parseData(returnData, tableCfg);
 
     const tableCfgHash = tableCfg._hash as string;
-    const tableType = (await this._tableType(request.table)) as ContentType;
+
     const table: TableType = {
+      _type: 'layers', // tableCfg.type,
       _data: parsedReturnData as any,
-      _type: tableType,
       _tableCfg: tableCfgHash,
       _hash: '',
     };
@@ -489,7 +454,7 @@ export class IoSqlite implements Io {
 
         // Run the query
         try {
-          this.db.prepare(query).run(serializedRow);
+          this.db.prepare(query).run(serializedRow as any[]);
         } catch (error) {
           /* v8 ignore next -- @preserve */
           if ((error as any).code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
@@ -523,7 +488,7 @@ export class IoSqlite implements Io {
 
     const result = this.db
       .prepare(this._sql.tableExists)
-      .get(tableKeyWithSuffix) as {
+      .get([tableKeyWithSuffix]) as unknown as {
       count: number;
     };
     return result ? true : false;
@@ -576,23 +541,23 @@ export class IoSqlite implements Io {
     this.db.close();
   }
   // Returns an example database directory
-  static exampleDbDir = async (dbDir: string | undefined = undefined) => {
-    // If dbDir is given, use it
-    let newTempDir = '';
-    if (dbDir) {
-      const dir = join(tmpdir(), dbDir);
-      /* v8 ignore next -- @preserve */
-      if (!existsSync(dir)) {
-        mkdirSync(dir);
-      }
-      newTempDir = dir;
-    }
-    // If no dbDir is given, create a new temp dir
-    else {
-      const prefix = join(tmpdir(), 'io-sqlite-'); // prefix must end with '-'
-      newTempDir = await mkdtemp(prefix);
-    }
+  // static exampleDbDir = async (dbDir: string | undefined = undefined) => {
+  //   // If dbDir is given, use it
+  //   let newTempDir = '';
+  //   if (dbDir) {
+  //     const dir = join(tmpdir(), dbDir);
+  //     /* v8 ignore next -- @preserve */
+  //     if (!existsSync(dir)) {
+  //       mkdirSync(dir);
+  //     }
+  //     newTempDir = dir;
+  //   }
+  //   // If no dbDir is given, create a new temp dir
+  //   else {
+  //     const prefix = join(tmpdir(), 'io-sqlite-'); // prefix must end with '-'
+  //     newTempDir = await mkdtemp(prefix);
+  //   }
 
-    return newTempDir;
-  };
+  //   return newTempDir;
+  // };
 }
