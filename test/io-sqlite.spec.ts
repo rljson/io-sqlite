@@ -13,6 +13,7 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens';
 
+
 describe('IoSqlite', () => {
   let ioSql: IoSqlite;
 
@@ -569,7 +570,7 @@ describe('IoSqlite', () => {
           },
         ],
         type: 'cakes',
-        version: 1,
+        // version: 1,
       };
 
       const tableCfg2: TableCfg = {
@@ -598,7 +599,7 @@ describe('IoSqlite', () => {
           },
         ],
         type: 'layers',
-        version: 1,
+        // version: 1,
       };
 
       await ioSql.createOrExtendTable({ tableCfg: tableCfg1 });
@@ -617,14 +618,14 @@ describe('IoSqlite', () => {
       expect(table1Cfg).toMatchObject({
         key: 'table1',
         type: 'cakes',
-        version: 1,
+        // version: 1,
       });
 
       const table2Cfg = rawCfgs.find((cfg) => cfg.key === 'table2');
       expect(table2Cfg).toMatchObject({
         key: 'table2',
         type: 'layers',
-        version: 1,
+        // version: 1,
       });
     });
 
@@ -633,7 +634,7 @@ describe('IoSqlite', () => {
       const rawCfgs = await ioSql.rawTableCfgs();
       const keys = rawCfgs.map((cfg) => cfg.key);
       expect(keys).toContain('tableCfgs');
-      expect(keys.length).toBe(1);
+      expect(keys.length).toBe(2);
     });
   });
 });

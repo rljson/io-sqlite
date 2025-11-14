@@ -17,6 +17,7 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
+
 export class SqlStatements {
   /// simple  keywords and statements*******************
   connectingColumn: string = '_hash';
@@ -185,21 +186,11 @@ export class SqlStatements {
   get catalogExists() {
     return 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
   }
-  get catalogArticleTypes() {
-    return (
-      `SELECT articleType FROM currentArticles\n` +
-      `WHERE winNumber = ?\n` +
-      `GROUP BY articleType`
-    );
-  }
 
-  contentType(tableName: string): string {
-    console.log('Generating contentType SQL for table:', tableName);
-    // const searchTable = this.addTableSuffix(tableName);
+  contentType(): string {
     const sourceTable = this.addTableSuffix(this.tbl.main);
     const resultCol = this.addColumnSuffix('type');
-    const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col = '${tableName}'`;
-    // const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col IS NOT NULL`;
+    const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col =?`;
     return sql;
   }
 
@@ -226,8 +217,9 @@ export class SqlStatements {
     return `INSERT INTO ${this.tbl.main}${this.suffix.tbl} ( ${columnsSql} ) VALUES (${valuesSql})`;
   }
 
-  get tableExists() {
-    return `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`;
+  tableExists() {
+    // return `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableKey}';`;
+    return `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`;
   }
 
   get tableType() {
@@ -279,9 +271,9 @@ export class SqlStatements {
     return `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '${winNumber}'`;
   }
 
-  get insertCurrentArticles() {
-    return `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
-  }
+  // get insertCurrentArticles() {
+  //   return `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
+  // }
 
   currentCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;

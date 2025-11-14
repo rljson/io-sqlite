@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { SqlStatements } from '../src/sql-statements';
 
+
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
 // und Softwareentwicklung mbH. All Rights Reserved.
@@ -26,8 +27,8 @@ describe('SQlStatements', () => {
 
   test('tableName generates correct query', () => {
     const expectedQuery =
-      "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?";
-    expect(sql.tableExists).toBe(expectedQuery);
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?;";
+    expect(sql.tableExists()).toBe(expectedQuery);
   });
 
   test('allColumns generates correct query', () => {
@@ -75,11 +76,6 @@ describe('SQlStatements', () => {
   test('catalogExists generates correct query', () => {
     const expectedQuery = 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
     expect(sql.catalogExists).toBe(expectedQuery);
-  });
-
-  test('catalogArticleTypes generates correct query', () => {
-    const expectedQuery = `SELECT articleType FROM currentArticles\nWHERE winNumber = ?\nGROUP BY articleType`;
-    expect(sql.catalogArticleTypes).toBe(expectedQuery);
   });
 
   test('foreignKeyReferences generates correct query', () => {
@@ -152,12 +148,6 @@ describe('SQlStatements', () => {
     const expectedQuery = `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '12345'`;
     expect(sql.articleSetsRefs(winNumber)).toBe(expectedQuery);
   });
-
-  test('insertCurrentArticles generates correct query', () => {
-    const expectedQuery = `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
-    expect(sql.insertCurrentArticles).toBe(expectedQuery);
-  });
-
   test('currentCount generates correct query', () => {
     const tableKey = sql.addTableSuffix('testTable');
     const expectedQuery = `SELECT COUNT(*) FROM ${tableKey}`;
