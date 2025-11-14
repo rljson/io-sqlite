@@ -54,10 +54,10 @@
   },
   "dependencies": {
     "@rljson/hash": "^0.0.17",
-    "@rljson/io": "^0.0.55",
+    "@rljson/io": "^0.0.56",
     "@rljson/is-ready": "^0.0.17",
     "@rljson/json": "^0.0.23",
-    "@rljson/rljson": "^0.0.69",
+    "@rljson/rljson": "^0.0.71",
     "path-browserify": "^1.0.1",
     "sql.js": "^1.13.0"
   },
