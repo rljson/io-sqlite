@@ -36,7 +36,9 @@ export default defineConfig({
         // Add all peer depencies from package.json here
       ],
       output: {
-        globals: {},
+        globals: {
+          'sql.js': 'SQL', // global variable name if using CDN
+        },
       },
     },
   },
