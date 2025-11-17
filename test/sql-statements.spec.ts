@@ -10,7 +10,6 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { SqlStatements } from '../src/sql-statements';
 
-
 // @license
 // Copyright (c) 2025 CARAT Gesellschaft für Organisation
 // und Softwareentwicklung mbH. All Rights Reserved.
@@ -272,5 +271,13 @@ describe('SQlStatements', () => {
       `ALTER TABLE testTable_tbl ADD COLUMN newColumn2_col REAL;`,
     ];
     expect(sql.alterTable(tableKey, addedColumns)).toEqual(expectedQueries);
+  });
+
+  test('selection generates correct query', () => {
+    const tableKey = 'testTable';
+    const columns = 'column1, column2';
+    const whereClause = "column1 = 'value'";
+    const expectedQuery = `SELECT ${columns} FROM ${tableKey} WHERE ${whereClause}`;
+    expect(sql.selection(tableKey, columns, whereClause)).toBe(expectedQuery);
   });
 });

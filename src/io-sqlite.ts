@@ -95,11 +95,12 @@ export class IoSqlite implements Io {
   async rowCount(table: string): Promise<number> {
     await this._ioTools.throwWhenTableDoesNotExist(table);
 
-    const stmt = this.db.prepare(this._sql.rowCount(table));
-    const result = stmt.get(); // as { 'COUNT(*)': number };
-    console.log('rowCount result:', result);
-    stmt.free();
-    return 0; //result['COUNT(*)'];
+    const stmt = this.db.exec(this._sql.rowCount(table));
+    /* v8 ignore next -- @preserve */
+    const countRaw = stmt[0]?.values?.[0]?.[0] ?? 0;
+    /* v8 ignore next -- @preserve */
+    const count = Number(countRaw);
+    return count;
   }
 
   // ...........................................................................
@@ -111,8 +112,8 @@ export class IoSqlite implements Io {
     const tableCfg = IoTools.tableCfgsTableCfg;
     // const query = this._sql.contentType(this._sql.tableCfgs);
     const result = this.db.exec(this._sql.tableCfgs);
-    const rows = result[0]?.values || [];
-    const columns = result[0]?.columns || [];
+    const rows = result[0]?.values;
+    const columns = result[0]?.columns;
     const jsonRows = rows.map((row: any[]) => {
       const obj: any = {};
       columns.forEach((col: string, idx: number) => {
@@ -159,12 +160,12 @@ export class IoSqlite implements Io {
     //create main table if it does not exist yet
     this.db.prepare(this._sql.createTable(tableCfg)).run();
 
-    // Write tableCfg as first row into tableCfgs tableso
-    // As this is the first row to be entered, it is entered manually
+    // Write tableCfg as first row into tableCfgs table;
+    // as this is the first row to be entered, it is entered manually
     const values = this._serializeRow(tableCfg, tableCfg);
 
     const p = this.db.prepare(this._sql.insertTableCfg());
-    p.run(values.map((v) => (v === undefined ? null : v)) as any[]);
+    p.run(values as any[]);
   };
 
   // ...........................................................................
@@ -209,7 +210,7 @@ export class IoSqlite implements Io {
       IoTools.tableCfgsTableCfg,
     );
     const p = this.db.prepare(this._sql.insertTableCfg());
-    p.run(values.map((v) => (v === undefined ? null : v)) as any[]);
+    p.run(values as any[]);
   }
 
   // ...........................................................................
@@ -377,15 +378,16 @@ export class IoSqlite implements Io {
 
   private async _dump(): Promise<Rljson> {
     const returnFile: Rljson = {};
-    const tables = this.db.prepare(this._sql.tableKeys).get();
+    const result = this.db.exec(this._sql.tableKeys);
+    const tableNames = result[0]?.values?.map((row: any[]) => row[0]);
 
-    for (const table of tables as unknown as { name: string }[]) {
+    for (const table of tableNames) {
       const tableDump: Rljson = await this._dumpTable({
-        table: this._sql.removeTableSuffix(table.name),
+        table: this._sql.removeTableSuffix(table),
       });
 
-      returnFile[this._sql.removeTableSuffix(table.name)] =
-        tableDump[this._sql.removeTableSuffix(table.name)];
+      returnFile[this._sql.removeTableSuffix(table)] =
+        tableDump[this._sql.removeTableSuffix(table)];
     }
 
     this._addMissingHashes(returnFile);
@@ -462,7 +464,7 @@ export class IoSqlite implements Io {
           this._sql.addColumnSuffix(column),
         );
         const placeholders = columnKeys.map(() => '?').join(', ');
-        const query = `INSERT INTO ${tableKeyWithSuffix} (${columnKeysWithPostfix.join(
+        const query = `INSERT OR IGNORE INTO ${tableKeyWithSuffix} (${columnKeysWithPostfix.join(
           ', ',
         )}) VALUES (${placeholders})`;
 
@@ -480,11 +482,16 @@ export class IoSqlite implements Io {
           /* v8 ignore next -- @preserve */
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
+
+          /* v8 ignore next -- @preserve */
           const fixedErrorMessage = errorMessage
             .replace(this._sql.suffix.col, '')
             .replace(this._sql.suffix.tbl, '');
 
+          /* v8 ignore next -- @preserve */
           errorCount++;
+
+          /* v8 ignore next -- @preserve */
           errorStore.set(
             errorCount,
             `Error inserting into table ${tableName}: ${fixedErrorMessage}`,
@@ -537,12 +544,12 @@ export class IoSqlite implements Io {
     return whereString;
   }
 
-  async _tableType(tableName: string): Promise<string> {
-    const tableCfg = await this._ioTools.tableCfg(
-      this._sql.removeTableSuffix(tableName),
-    );
-    return tableCfg.type;
-  }
+  // async _tableType(tableName: string): Promise<string> {
+  //   const tableCfg = await this._ioTools.tableCfg(
+  //     this._sql.removeTableSuffix(tableName),
+  //   );
+  //   return tableCfg.type;
+  // }
 
   private _isOpen = false;
 

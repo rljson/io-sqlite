@@ -13,7 +13,6 @@ import { IoSqlite } from '../src/io-sqlite';
 
 import { expectGolden } from './setup/goldens';
 
-
 describe('IoSqlite', () => {
   let ioSql: IoSqlite;
 
