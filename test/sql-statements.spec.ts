@@ -26,27 +26,14 @@ describe('SQlStatements', () => {
 
   test('tableName generates correct query', () => {
     const expectedQuery =
-      "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?";
-    expect(sql.tableExists).toBe(expectedQuery);
-  });
-
-  test('foreignKeyList generates correct query', () => {
-    const tableName = 'testTable';
-    const expectedQuery = `PRAGMA foreign_key_list(${tableName})`;
-    expect(sql.foreignKeyList(tableName)).toBe(expectedQuery);
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?;";
+    expect(sql.tableExists()).toBe(expectedQuery);
   });
 
   test('allColumns generates correct query', () => {
     const tableName = 'testTable';
     const expectedQuery = `PRAGMA table_info(${tableName})`;
     expect(sql.columnKeys(tableName)).toBe(expectedQuery);
-  });
-
-  test('tableReferences generates correct query', () => {
-    const referenceArray = ['oneTableRef', 'otherTableRef'];
-    const expectedQuery =
-      'FOREIGN KEY (oneTableRef_col) REFERENCES oneTable_tbl (_hash_col), FOREIGN KEY (otherTableRef_col) REFERENCES otherTable_tbl (_hash_col)';
-    expect(sql.foreignKeys(referenceArray)).toBe(expectedQuery);
   });
 
   test('allTableNames generates correct query', () => {
@@ -88,11 +75,6 @@ describe('SQlStatements', () => {
   test('catalogExists generates correct query', () => {
     const expectedQuery = 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
     expect(sql.catalogExists).toBe(expectedQuery);
-  });
-
-  test('catalogArticleTypes generates correct query', () => {
-    const expectedQuery = `SELECT articleType FROM currentArticles\nWHERE winNumber = ?\nGROUP BY articleType`;
-    expect(sql.catalogArticleTypes).toBe(expectedQuery);
   });
 
   test('foreignKeyReferences generates correct query', () => {
@@ -165,12 +147,6 @@ describe('SQlStatements', () => {
     const expectedQuery = `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '12345'`;
     expect(sql.articleSetsRefs(winNumber)).toBe(expectedQuery);
   });
-
-  test('insertCurrentArticles generates correct query', () => {
-    const expectedQuery = `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
-    expect(sql.insertCurrentArticles).toBe(expectedQuery);
-  });
-
   test('currentCount generates correct query', () => {
     const tableKey = sql.addTableSuffix('testTable');
     const expectedQuery = `SELECT COUNT(*) FROM ${tableKey}`;
@@ -277,13 +253,31 @@ describe('SQlStatements', () => {
   test('alterTable generates correct queries for added columns', () => {
     const tableKey = 'testTable';
     const addedColumns: ColumnCfg[] = [
-      { key: 'newColumn1', type: 'string' },
-      { key: 'newColumn2', type: 'number' },
+      {
+        key: 'newColumn1',
+        type: 'string',
+        titleLong: 'newColumn1',
+        titleShort: 'newCol1',
+      },
+      {
+        key: 'newColumn2',
+        type: 'number',
+        titleLong: 'newColumn2',
+        titleShort: 'newCol2',
+      },
     ];
     const expectedQueries = [
       `ALTER TABLE testTable_tbl ADD COLUMN newColumn1_col TEXT;`,
       `ALTER TABLE testTable_tbl ADD COLUMN newColumn2_col REAL;`,
     ];
     expect(sql.alterTable(tableKey, addedColumns)).toEqual(expectedQueries);
+  });
+
+  test('selection generates correct query', () => {
+    const tableKey = 'testTable';
+    const columns = 'column1, column2';
+    const whereClause = "column1 = 'value'";
+    const expectedQuery = `SELECT ${columns} FROM ${tableKey} WHERE ${whereClause}`;
+    expect(sql.selection(tableKey, columns, whereClause)).toBe(expectedQuery);
   });
 });
