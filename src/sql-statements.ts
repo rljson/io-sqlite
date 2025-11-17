@@ -25,6 +25,7 @@ export class SqlStatements {
   tbl: { [key: string]: string } = {
     main: 'tableCfgs',
     revision: 'revisions',
+    returnCol: 'type',
   };
 
   /// Postfix handling for the database
@@ -32,7 +33,6 @@ export class SqlStatements {
     col: '_col',
     tbl: '_tbl',
     tmp: '_tmp',
-    ref: 'Ref',
   };
 
   /**
@@ -67,9 +67,6 @@ export class SqlStatements {
   rowCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
   }
-  foreignKeyList(tableKey: string) {
-    return `PRAGMA foreign_key_list(${tableKey})`;
-  }
 
   allData(tableKey: string, namedColumns?: string) {
     if (!namedColumns) {
@@ -86,7 +83,7 @@ export class SqlStatements {
     return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
   }
 
-  /* v8 ignore start */
+  /* v8 ignore next -- @preserve */
   get currentTableCfg(): string {
     const sql: string[] = [
       'WITH versions AS (',
@@ -100,7 +97,6 @@ export class SqlStatements {
     ];
     return sql.join('\n');
   }
-  /* v8 ignore end */
 
   get currentTableCfgs(): string {
     const sql: string[] = [
@@ -188,12 +184,12 @@ export class SqlStatements {
   get catalogExists() {
     return 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
   }
-  get catalogArticleTypes() {
-    return (
-      `SELECT articleType FROM currentArticles\n` +
-      `WHERE winNumber = ?\n` +
-      `GROUP BY articleType`
-    );
+
+  contentType(): string {
+    const sourceTable = this.addTableSuffix(this.tbl.main);
+    const resultCol = this.addColumnSuffix('type');
+    const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col =?`;
+    return sql;
   }
 
   foreignKeyReferences(refColumnNames: string[]) {
@@ -204,19 +200,6 @@ export class SqlStatements {
             0,
             -refName.length,
           )}(${this.addColumnSuffix(this.connectingColumn)})`,
-      )
-      .join(', ');
-  }
-
-  foreignKeys(refColumnNames: string[]): string {
-    return refColumnNames
-      .map(
-        (col) =>
-          `FOREIGN KEY (${col}${
-            this.suffix.col
-          }) REFERENCES ${this.addTableSuffix(
-            col.slice(0, -this.suffix.ref.length),
-          )} (${this.addColumnSuffix(this.connectingColumn)})`,
       )
       .join(', ');
   }
@@ -232,8 +215,8 @@ export class SqlStatements {
     return `INSERT INTO ${this.tbl.main}${this.suffix.tbl} ( ${columnsSql} ) VALUES (${valuesSql})`;
   }
 
-  get tableExists() {
-    return `SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`;
+  tableExists() {
+    return `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`;
   }
 
   get tableType() {
@@ -285,10 +268,6 @@ export class SqlStatements {
     return `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '${winNumber}'`;
   }
 
-  get insertCurrentArticles() {
-    return `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
-  }
-
   currentCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
   }
@@ -304,24 +283,10 @@ export class SqlStatements {
       })
       .join(', ');
 
-    // standard primary key - do not remove ;-)
-
     const conKey = `${this.connectingColumn}${this.suffix.col} TEXT`;
     const primaryKey = `${conKey} PRIMARY KEY`;
-
     const colsWithPrimaryKey = sqlCreateColumns.replace(conKey, primaryKey);
-
-    // *******************************************************************
-    // ******************foreign keys are not yet implemented*************
-    // *******************************************************************
-    const foreignKeys = this.foreignKeys(
-      columnsCfg
-        .map((col) => col.key)
-        .filter((col) => col.endsWith(this.suffix.ref)),
-    );
-    const sqlForeignKeys = foreignKeys ? `, ${foreignKeys}` : '';
-    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey}${sqlForeignKeys})`;
-    // return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
+    return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
   alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {

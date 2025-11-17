@@ -8,9 +8,14 @@ import { resolve } from 'path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
-
 export default defineConfig({
   plugins: [dts({ include: ['src/**/*'] })],
+
+  resolve: {
+    alias: {
+      path: 'path-browserify',
+    },
+  },
 
   build: {
     copyPublicDir: false,
@@ -31,7 +36,9 @@ export default defineConfig({
         // Add all peer depencies from package.json here
       ],
       output: {
-        globals: {},
+        globals: {
+          'sql.js': 'SQL', // global variable name if using CDN
+        },
       },
     },
   },
