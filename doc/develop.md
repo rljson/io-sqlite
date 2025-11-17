@@ -33,13 +33,13 @@ git pull
 
 ## Set pull request title
 
-Replace `build-problem-path-module` here and below
+Replace `update-to-match-new-io-interface` here and below
 by your new pull request title.
 
 ## Create a feature branch
 
 ```bash
-node scripts/create-branch.js "build-problem-path-module "
+node scripts/create-branch.js "update-to-match-new-io-interface "
 ```
 
 ## Update dependencies
@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"build-problem-path-module "
+git commit -am"update-to-match-new-io-interface "
 ```
 
 ## Increase version
@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "build-problem-path-module " --body " "
+gh pr create --base main --title "update-to-match-new-io-interface " --body " "
 ```
 
 ## Code review
