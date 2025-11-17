@@ -17,7 +17,6 @@ import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
 import { refName } from './constants.ts';
 
-
 export class SqlStatements {
   /// simple  keywords and statements*******************
   connectingColumn: string = '_hash';
@@ -218,7 +217,6 @@ export class SqlStatements {
   }
 
   tableExists() {
-    // return `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableKey}';`;
     return `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`;
   }
 
@@ -270,10 +268,6 @@ export class SqlStatements {
   articleSetsRefs(winNumber: string) {
     return `SELECT layer, articleSetsRef FROM catalogLayers WHERE winNumber = '${winNumber}'`;
   }
-
-  // get insertCurrentArticles() {
-  //   return `INSERT OR IGNORE INTO currentArticles (winNumber, articleType, layer, articleHash) VALUES (?, ?, ?, ?)`;
-  // }
 
   currentCount(tableKey: string) {
     return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;

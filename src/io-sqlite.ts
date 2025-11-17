@@ -110,7 +110,6 @@ export class IoSqlite implements Io {
   // ...........................................................................
   async rawTableCfgs(): Promise<TableCfg[]> {
     const tableCfg = IoTools.tableCfgsTableCfg;
-    // const query = this._sql.contentType(this._sql.tableCfgs);
     const result = this.db.exec(this._sql.tableCfgs);
     const rows = result[0]?.values;
     const columns = result[0]?.columns;
@@ -264,7 +263,6 @@ export class IoSqlite implements Io {
     const tableCfg = await this._ioTools.tableCfg(request.table);
 
     const whereString = this._whereString(Object.entries(request.where));
-    // const query = this._sql.selection(tableKeyWithSuffix, '*', whereString);
     const query = `SELECT * FROM ${tableKeyWithSuffix} WHERE${whereString}`;
     const returnValue = this.db.exec(query);
     // Extract the 'values' part from returnValue and convert them into JSON objects
@@ -407,12 +405,12 @@ export class IoSqlite implements Io {
       this._sql.addColumnSuffix(col),
     );
 
-    const returnData = this.db.exec(
+    const result = this.db.exec(
       this._sql.allData(tableKey, columnKeysWithSuffix.join(', ')),
     );
     // Convert returnData (from db.exec) into array of JSON objects
-    const rows = returnData[0]?.values || [];
-    const columns = returnData[0]?.columns || [];
+    const rows = result[0]?.values || [];
+    const columns = result[0]?.columns || [];
     const jsonRows = rows.map((row: any[]) => {
       const obj: any = {};
       columns.forEach((col: string, idx: number) => {
@@ -543,13 +541,6 @@ export class IoSqlite implements Io {
 
     return whereString;
   }
-
-  // async _tableType(tableName: string): Promise<string> {
-  //   const tableCfg = await this._ioTools.tableCfg(
-  //     this._sql.removeTableSuffix(tableName),
-  //   );
-  //   return tableCfg.type;
-  // }
 
   private _isOpen = false;
 
