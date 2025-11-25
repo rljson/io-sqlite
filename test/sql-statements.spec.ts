@@ -43,27 +43,13 @@ describe('SQlStatements', () => {
 
   test('tableType returns correct type', () => {
     expect(sql.tableType).toBe(
-      'SELECT type_col AS type FROM tableCfgs_col WHERE key_col = ? ' +
-        'AND version_col = (SELECT MAX(version_col) FROM tableCfgs_col WHERE key_col = ?)',
+      `SELECT type_col AS type FROM tableCfgs_tbl
+      WHERE key_col = ?
+      AND version_col
+      = (SELECT MAX(version_col)
+        FROM tableCfgs_tbl
+        WHERE key_col = ?)`,
     );
-  });
-
-  test('suffix for tables returns correct suffix', () => {
-    expect(sql.suffix.tbl).toBe('_tbl');
-  });
-
-  test('suffix for columns returns correct suffix', () => {
-    expect(sql.suffix.col).toBe('_col');
-  });
-
-  test('suffix for temp tables returns correct suffix', () => {
-    expect(sql.suffix.tmp).toBe('_tmp');
-  });
-
-  test('joinExpression generates correct query', () => {
-    const alias = 't';
-    const expectedQuery = `LEFT JOIN testTable AS t \n`;
-    expect(sql.joinExpression('testTable', alias)).toBe(expectedQuery);
   });
 
   test('articleExists generates correct query', () => {
@@ -75,16 +61,6 @@ describe('SQlStatements', () => {
   test('catalogExists generates correct query', () => {
     const expectedQuery = 'SELECT 1 FROM catalogLayers WHERE winNumber = ?';
     expect(sql.catalogExists).toBe(expectedQuery);
-  });
-
-  test('foreignKeyReferences generates correct query', () => {
-    const columnNames = ['basicShapeWidthsRef', 'basicShapeDepthsRef'];
-    const expectedQuery =
-      'FOREIGN KEY (basicShapeWidthsRef_col) REFERENCES basicShapeWidths(' +
-      '_hash_col), FOREIGN KEY (basicShapeDepthsRef_col) REFERENCES basicShapeDepths(' +
-      '_hash_col)';
-
-    expect(sql.foreignKeyReferences(columnNames)).toBe(expectedQuery);
   });
 
   test('createMainTable generates correct query', () => {
@@ -104,26 +80,26 @@ describe('SQlStatements', () => {
 
   test('dropTable generates correct query', () => {
     const tableKey = 'testTable';
-    const expectedQuery = `DROP TABLE IF EXISTS testTable${sql.suffix.tbl}`;
+    const expectedQuery = `DROP TABLE IF EXISTS testTable_tbl`;
     expect(sql.dropTable(tableKey)).toBe(expectedQuery);
   });
 
   test('createTempTable generates correct query', () => {
     const tableKey = 'testTable';
-    const expectedQuery = `CREATE TABLE testTable${sql.suffix.tmp} AS SELECT * FROM testTable${sql.suffix.tbl}`;
+    const expectedQuery = `CREATE TABLE testTable_tmp AS SELECT * FROM testTable_tbl`;
     expect(sql.createTempTable(tableKey)).toBe(expectedQuery);
   });
 
   test('dropTempTable generates correct query', () => {
     const tableKey = 'testTable';
-    const expectedQuery = `DROP TABLE IF EXISTS testTable${sql.suffix.tmp}`;
+    const expectedQuery = `DROP TABLE IF EXISTS testTable_tmp`;
     expect(sql.dropTempTable(tableKey)).toBe(expectedQuery);
   });
 
   test('fillTable generates correct query', () => {
     const tableKey = 'testTable';
     const commonColumns = 'column1, column2';
-    const expectedQuery = `INSERT INTO testTable${sql.suffix.tbl} (column1, column2) SELECT column1, column2 FROM testTable${sql.suffix.tmp}`;
+    const expectedQuery = `INSERT INTO testTable_tbl (column1, column2) SELECT column1, column2 FROM testTable_tmp`;
     expect(sql.fillTable(tableKey, commonColumns)).toBe(expectedQuery);
   });
 
@@ -148,7 +124,7 @@ describe('SQlStatements', () => {
     expect(sql.articleSetsRefs(winNumber)).toBe(expectedQuery);
   });
   test('currentCount generates correct query', () => {
-    const tableKey = sql.addTableSuffix('testTable');
+    const tableKey = 'testTable_tbl';
     const expectedQuery = `SELECT COUNT(*) FROM ${tableKey}`;
     expect(sql.currentCount(tableKey)).toBe(expectedQuery);
   });
@@ -224,19 +200,6 @@ describe('SQlStatements', () => {
     expect(sql.jsonToSqlType('jsonValue')).toBe('TEXT');
   });
 
-  test('removeColumnSuffix removes correct suffix', () => {
-    const columnNameWithSuffix = 'testColumn_col';
-    const columnNameWithoutSuffix = 'testColumn';
-    expect(sql.removeColumnSuffix(columnNameWithSuffix)).toBe(
-      columnNameWithoutSuffix,
-    );
-  });
-
-  test('removeColumnSuffix does not modify names without suffix', () => {
-    const columnName = 'testColumn';
-    expect(sql.removeColumnSuffix(columnName)).toBe(columnName);
-  });
-
   test('tableTypeCheck generates correct query', () => {
     const expectedQuery = `SELECT type_col FROM tableCfgs_tbl WHERE key_col = ?`;
     expect(sql.tableTypeCheck).toBe(expectedQuery);
@@ -244,9 +207,7 @@ describe('SQlStatements', () => {
 
   test('rowCount generates correct query', () => {
     const tableKey = 'testTable';
-    const expectedQuery = `SELECT COUNT(*) FROM ${sql.addTableSuffix(
-      tableKey,
-    )}`;
+    const expectedQuery = `SELECT COUNT(*) FROM testTable_tbl`;
     expect(sql.rowCount(tableKey)).toBe(expectedQuery);
   });
 
