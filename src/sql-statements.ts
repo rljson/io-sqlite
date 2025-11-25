@@ -11,30 +11,12 @@
 // and https://www.sqlite.org/cli.html
 //****************************************************** */
 
-import { IoTools } from '@rljson/io';
+import { IoDbNameMapping, IoTools } from '@rljson/io';
 import { JsonValueType } from '@rljson/json';
 import { ColumnCfg, TableCfg, TableKey } from '@rljson/rljson';
 
-import { refName } from './constants.ts';
-
 export class SqlStatements {
-  /// simple  keywords and statements*******************
-  connectingColumn: string = '_hash';
-  queryIntro: string = 'SELECT DISTINCT';
-
-  // Names for the main tables in the database
-  tbl: { [key: string]: string } = {
-    main: 'tableCfgs',
-    revision: 'revisions',
-    returnCol: 'type',
-  };
-
-  /// Postfix handling for the database
-  suffix: { [key: string]: string } = {
-    col: '_col',
-    tbl: '_tbl',
-    tmp: '_tmp',
-  };
+  private _map = new IoDbNameMapping();
 
   /**
    * Converts a JSON value type to an SQLite data type.
@@ -66,7 +48,7 @@ export class SqlStatements {
   }
 
   rowCount(tableKey: string) {
-    return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
+    return `SELECT COUNT(*) FROM ${this._map.addTableSuffix(tableKey)}`;
   }
 
   allData(tableKey: string, namedColumns?: string) {
@@ -77,11 +59,15 @@ export class SqlStatements {
   }
 
   get tableCfg() {
-    return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl} WHERE key${this.suffix.col} = ?`;
+    return `SELECT * FROM ${this._map.addTableSuffix(
+      this._map.tableNames.main,
+    )} WHERE ${this._map.addColumnSuffix('key')} = ?`;
   }
 
   get tableCfgs() {
-    return `SELECT * FROM ${this.tbl.main}${this.suffix.tbl}`;
+    return `SELECT * FROM ${this._map.addTableSuffix(
+      this._map.tableNames.main,
+    )}`;
   }
 
   /* v8 ignore next -- @preserve */
@@ -144,36 +130,6 @@ export class SqlStatements {
     return sql.join('\n');
   }
 
-  addColumnSuffix(name: string): string {
-    return this.addFix(name, this.suffix.col);
-  }
-
-  addTableSuffix(name: string): string {
-    return this.addFix(name, this.suffix.tbl);
-  }
-
-  // add suffix to a name in order to avoid name conflicts
-  addFix(name: string, fix: string): string {
-    return name.endsWith(fix) ? name : name + fix;
-  }
-
-  removeTableSuffix(name: string): string {
-    return this.remFix(name, this.suffix.tbl);
-  }
-
-  removeColumnSuffix(name: string): string {
-    return this.remFix(name, this.suffix.col);
-  }
-
-  // remove suffix from a name in order to communicate with the outside world
-  remFix(name: string, fix: string): string {
-    return name.endsWith(fix) ? name.slice(0, -fix.length) : name;
-  }
-
-  joinExpression(tableKey: string, alias: string) {
-    return `LEFT JOIN ${tableKey} AS ${alias} \n`;
-  }
-
   get articleExists() {
     return (
       'SELECT cl.layer, ar.assign FROM catalogLayers cl\n' +
@@ -187,33 +143,23 @@ export class SqlStatements {
   }
 
   contentType(): string {
-    const sourceTable = this.addTableSuffix(this.tbl.main);
-    const resultCol = this.addColumnSuffix('type');
+    const sourceTable = this._map.addTableSuffix(this._map.tableNames.main);
+    const resultCol = this._map.addColumnSuffix('type');
     const sql = `SELECT ${resultCol} FROM [${sourceTable}] WHERE key_col =?`;
     return sql;
-  }
-
-  foreignKeyReferences(refColumnNames: string[]) {
-    return refColumnNames
-      .map(
-        (col: string | any[]) =>
-          `FOREIGN KEY (${col}${this.suffix.col}) REFERENCES ${col.slice(
-            0,
-            -refName.length,
-          )}(${this.addColumnSuffix(this.connectingColumn)})`,
-      )
-      .join(', ');
   }
 
   insertTableCfg() {
     const columnKeys = IoTools.tableCfgsTableCfg.columns.map((col) => col.key);
     const columnKeysWithPostfix = columnKeys.map((col) =>
-      this.addColumnSuffix(col),
+      this._map.addColumnSuffix(col),
     );
     const columnsSql = columnKeysWithPostfix.join(', ');
     const valuesSql = '?, '.repeat(columnKeys.length - 1) + '?';
 
-    return `INSERT INTO ${this.tbl.main}${this.suffix.tbl} ( ${columnsSql} ) VALUES (${valuesSql})`;
+    return `INSERT INTO ${this._map.addTableSuffix(
+      this._map.tableNames.main,
+    )} ( ${columnsSql} ) VALUES (${valuesSql})`;
   }
 
   tableExists() {
@@ -221,7 +167,14 @@ export class SqlStatements {
   }
 
   get tableType() {
-    return `SELECT type${this.suffix.col} AS type FROM ${this.tbl.main}${this.suffix.col} WHERE key${this.suffix.col} = ? AND version${this.suffix.col} = (SELECT MAX(version${this.suffix.col}) FROM ${this.tbl.main}${this.suffix.col} WHERE key${this.suffix.col} = ?)`;
+    return `SELECT ${this._map.addColumnSuffix(
+      'type',
+    )} AS type FROM ${this._map.addTableSuffix(this._map.tableNames.main)}
+      WHERE ${this._map.addColumnSuffix('key')} = ?
+      AND ${this._map.addColumnSuffix('version')}
+      = (SELECT MAX(${this._map.addColumnSuffix('version')})
+        FROM ${this._map.addTableSuffix(this._map.tableNames.main)}
+        WHERE ${this._map.addColumnSuffix('key')} = ?)`;
   }
 
   columnKeys(tableKey: string) {
@@ -237,20 +190,26 @@ export class SqlStatements {
   }
 
   dropTable(tableKey: string) {
-    return `DROP TABLE IF EXISTS ${tableKey}${this.suffix.tbl}`;
+    return `DROP TABLE IF EXISTS ${this._map.addTableSuffix(tableKey)}`;
   }
 
   createTempTable(tableKey: string) {
-    return `CREATE TABLE ${tableKey}${this.suffix.tmp} AS SELECT * FROM ${tableKey}${this.suffix.tbl}`;
+    return `CREATE TABLE ${this._map.addTmpSuffix(
+      tableKey,
+    )} AS SELECT * FROM ${this._map.addTableSuffix(tableKey)}`;
   }
 
   dropTempTable(tableKey: string) {
-    return `DROP TABLE IF EXISTS ${tableKey}${this.suffix.tmp}`;
+    return `DROP TABLE IF EXISTS ${this._map.addTmpSuffix(tableKey)}`;
   }
 
   fillTable(tableKey: string, commonColumns: string) {
     // select only those columns that are in both tables
-    return `INSERT INTO ${tableKey}${this.suffix.tbl} (${commonColumns}) SELECT ${commonColumns} FROM ${tableKey}${this.suffix.tmp}`;
+    return `INSERT INTO ${this._map.addTableSuffix(
+      tableKey,
+    )} (${commonColumns}) SELECT ${commonColumns} FROM ${this._map.addTmpSuffix(
+      tableKey,
+    )}`;
   }
 
   deleteFromTable(tableKey: string, winNumber: string) {
@@ -270,31 +229,33 @@ export class SqlStatements {
   }
 
   currentCount(tableKey: string) {
-    return `SELECT COUNT(*) FROM ${this.addTableSuffix(tableKey)}`;
+    return `SELECT COUNT(*) FROM ${this._map.addTableSuffix(tableKey)}`;
   }
 
   createTable(tableCfg: TableCfg): string {
-    const sqltableKey = this.addTableSuffix(tableCfg.key);
+    const sqltableKey = this._map.addTableSuffix(tableCfg.key);
     const columnsCfg = tableCfg.columns;
 
     const sqlCreateColumns = columnsCfg
       .map((col) => {
         const sqliteType = this.jsonToSqlType(col.type);
-        return `${this.addColumnSuffix(col.key)} ${sqliteType}`;
+        return `${this._map.addColumnSuffix(col.key)} ${sqliteType}`;
       })
       .join(', ');
 
-    const conKey = `${this.connectingColumn}${this.suffix.col} TEXT`;
+    const conKey = `${this._map.addColumnSuffix(
+      this._map.primaryKeyColumn,
+    )} TEXT`;
     const primaryKey = `${conKey} PRIMARY KEY`;
     const colsWithPrimaryKey = sqlCreateColumns.replace(conKey, primaryKey);
     return `CREATE TABLE ${sqltableKey} (${colsWithPrimaryKey})`;
   }
 
   alterTable(tableKey: TableKey, addedColumns: ColumnCfg[]): string[] {
-    const tableKeyWithSuffix = this.addTableSuffix(tableKey);
+    const tableKeyWithSuffix = this._map.addTableSuffix(tableKey);
     const statements: string[] = [];
     for (const col of addedColumns) {
-      const columnKey = this.addColumnSuffix(col.key);
+      const columnKey = this._map.addColumnSuffix(col.key);
       const columnType = this.jsonToSqlType(col.type);
       statements.push(
         `ALTER TABLE ${tableKeyWithSuffix} ADD COLUMN ${columnKey} ${columnType};`,
@@ -309,6 +270,10 @@ export class SqlStatements {
   }
 
   get tableTypeCheck() {
-    return `SELECT type${this.suffix.col} FROM tableCfgs${this.suffix.tbl} WHERE key${this.suffix.col} = ?`;
+    return `SELECT ${this._map.addColumnSuffix(
+      'type',
+    )} FROM ${this._map.addTableSuffix(
+      this._map.tableNames.main,
+    )} WHERE ${this._map.addColumnSuffix('key')} = ?`;
   }
 }
