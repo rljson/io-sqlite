@@ -5,7 +5,7 @@
 // found in the LICENSE file in the root of this package.
 
 import { hip, hsh } from '@rljson/hash';
-import { Io, IoTools } from '@rljson/io';
+import { Io, IoDbNameMapping, IoTools } from '@rljson/io';
 import { IsReady } from '@rljson/is-ready';
 import { Json, JsonValue, JsonValueType } from '@rljson/json';
 import {
@@ -29,6 +29,7 @@ export class IoSqlite implements Io {
   private _ioTools!: IoTools;
   private _isReady = new IsReady();
   private _sql: SqlStatements;
+  private _map = new IoDbNameMapping();
   constructor() {
     this._sql = new SqlStatements();
   }
@@ -133,7 +134,7 @@ export class IoSqlite implements Io {
     console.log('Extracted table keys:', returnValueStr);
     // remove the suffixes
     const tableKeys = returnValueStr.map((key) =>
-      this._sql.removeTableSuffix(key),
+      this._map.removeTableSuffix(key),
     );
     return tableKeys;
   }
@@ -259,7 +260,7 @@ export class IoSqlite implements Io {
       ...Object.keys(request.where),
     ]);
 
-    const tableKeyWithSuffix = this._sql.addTableSuffix(request.table);
+    const tableKeyWithSuffix = this._map.addTableSuffix(request.table);
     const tableCfg = await this._ioTools.tableCfg(request.table);
 
     const whereString = this._whereString(Object.entries(request.where));
@@ -330,7 +331,7 @@ export class IoSqlite implements Io {
       const convertedRow: { [key: string]: any } = {};
       for (let colNum = 0; colNum < columnKeys.length; colNum++) {
         const key = columnKeys[colNum];
-        const keyWithSuffix = this._sql.addColumnSuffix(key);
+        const keyWithSuffix = this._map.addColumnSuffix(key);
         const type = columnTypes[colNum] as JsonValueType;
         const val = row[keyWithSuffix];
 
@@ -381,11 +382,11 @@ export class IoSqlite implements Io {
 
     for (const table of tableNames) {
       const tableDump: Rljson = await this._dumpTable({
-        table: this._sql.removeTableSuffix(table),
+        table: this._map.removeTableSuffix(table),
       });
 
-      returnFile[this._sql.removeTableSuffix(table)] =
-        tableDump[this._sql.removeTableSuffix(table)];
+      returnFile[this._map.removeTableSuffix(table)] =
+        tableDump[this._map.removeTableSuffix(table)];
     }
 
     this._addMissingHashes(returnFile);
@@ -396,13 +397,13 @@ export class IoSqlite implements Io {
   // ...........................................................................
   private async _dumpTable(request: { table: string }): Promise<Rljson> {
     await this._ioTools.throwWhenTableDoesNotExist(request.table);
-    const tableKey = this._sql.addTableSuffix(request.table);
+    const tableKey = this._map.addTableSuffix(request.table);
 
     // get table's column structure
     const tableCfg = await this._ioTools.tableCfg(request.table);
     const columnKeys = tableCfg.columns.map((col) => col.key);
     const columnKeysWithSuffix = columnKeys.map((col) =>
-      this._sql.addColumnSuffix(col),
+      this._map.addColumnSuffix(col),
     );
 
     const result = this.db.exec(
@@ -452,14 +453,14 @@ export class IoSqlite implements Io {
       const tableCfg = await this._ioTools.tableCfg(tableName);
 
       // Create internal table name
-      const tableKeyWithSuffix = this._sql.addTableSuffix(tableName);
+      const tableKeyWithSuffix = this._map.addTableSuffix(tableName);
 
       for (const row of tableData._data) {
         // Prepare and run the SQL query
         // (each row might have a different number of columns)
         const columnKeys = tableCfg.columns.map((col) => col.key);
         const columnKeysWithPostfix = columnKeys.map((column) =>
-          this._sql.addColumnSuffix(column),
+          this._map.addColumnSuffix(column),
         );
         const placeholders = columnKeys.map(() => '?').join(', ');
         const query = `INSERT OR IGNORE INTO ${tableKeyWithSuffix} (${columnKeysWithPostfix.join(
@@ -482,17 +483,12 @@ export class IoSqlite implements Io {
             error instanceof Error ? error.message : 'Unknown error';
 
           /* v8 ignore next -- @preserve */
-          const fixedErrorMessage = errorMessage
-            .replace(this._sql.suffix.col, '')
-            .replace(this._sql.suffix.tbl, '');
-
-          /* v8 ignore next -- @preserve */
           errorCount++;
 
           /* v8 ignore next -- @preserve */
           errorStore.set(
             errorCount,
-            `Error inserting into table ${tableName}: ${fixedErrorMessage}`,
+            `Error inserting into table ${tableName}: ${errorMessage}`,
           );
         }
       }
@@ -506,7 +502,7 @@ export class IoSqlite implements Io {
 
   async _tableExists(tableKey: string): Promise<boolean> {
     /* v8 ignore next -- @preserve */
-    const tableKeyWithSuffix = this._sql.addTableSuffix(tableKey);
+    const tableKeyWithSuffix = this._map.addTableSuffix(tableKey);
     const result = this.db
       .prepare(this._sql.tableExists())
       .get([tableKeyWithSuffix]);
@@ -515,7 +511,7 @@ export class IoSqlite implements Io {
   _whereString(whereClause: [string, JsonValue][]): string {
     let whereString: string = ' ';
     for (const [column, value] of whereClause) {
-      const columnWithFix = this._sql.addColumnSuffix(column);
+      const columnWithFix = this._map.addColumnSuffix(column);
 
       /* v8 ignore next -- @preserve */
       if (typeof value === 'string') {
