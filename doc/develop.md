@@ -96,7 +96,7 @@ node scripts/push-branch.js
 ## Create a pull request
 
 ```bash
-gh pr create --base main --title "update-to-match-new-io-interface " --body " "
+gh pr create --base main --title "minor-update " --body " "
 ```
 
 ## Code review
