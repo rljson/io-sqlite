@@ -26,8 +26,7 @@
     "prepublishOnly": "pnpm run build",
     "lint": "pnpm eslint",
     "updateGoldens": "cross-env UPDATE_GOLDENS=true pnpm test",
-    "installConformanceTests": "node scripts/install-conformance-tests.js",
-    "postinstall": "shx cp node_modules/sql.js/dist/sql-wasm.wasm src/assets/sql-wasm.wasm"
+    "installConformanceTests": "node scripts/install-conformance-tests.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

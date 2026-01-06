@@ -65,7 +65,7 @@ In Vscode, press
 
 ```bash
 git add .
-git commit -am"update-to-match-new-io-interface "
+git commit -am"minor-update "
 ```
 
 ## Increase version
