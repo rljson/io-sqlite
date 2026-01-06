@@ -35,9 +35,9 @@ export default defineConfig({
         '@rljson/hash',
         '@rljson/is-ready',
         '@rljson/io',
-        'fs',
-        'path',
-        'sql.js',
+        // 'fs',
+        // 'path',
+        // 'sql.js',
         // Add all peer depencies from package.json here
       ],
       output: {
