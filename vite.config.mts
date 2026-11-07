@@ -11,6 +11,8 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
   plugins: [dts({ include: ['src/**/*'] })],
 
+  assetsInclude: ['**/*.wasm'],
+
   resolve: {
     alias: {
       path: 'path-browserify',
@@ -33,6 +35,9 @@ export default defineConfig({
         '@rljson/hash',
         '@rljson/is-ready',
         '@rljson/io',
+        // 'fs',
+        // 'path',
+        // 'sql.js',
         // Add all peer depencies from package.json here
       ],
       output: {
